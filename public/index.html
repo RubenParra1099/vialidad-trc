@@ -945,6 +945,8 @@ button.lgi:hover{border-color:var(--accent)}
 .lcard .lyr span{line-height:1.25}
 .lcard .lcount{margin:-4px 0 0 23px;align-self:flex-start}
 .lpills{display:flex;flex-wrap:wrap;gap:6px}
+.lhd{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px}
+.lhd svg{color:var(--tone);flex:none}
 .lcount{align-self:center;font-size:11.5px;color:var(--muted);font-weight:700;margin-left:4px}
 .ltag{display:inline-flex;align-items:center;gap:6px;font-weight:600}
 /* búsqueda */
@@ -1480,7 +1482,7 @@ function heroHTML(k){
 function filtersHTML(k){
   const m=MODS[k];
   const metr=k!=='general'&&m.metrics.length>1?`<div class="metricbar"><span class="lab" style="display:flex;gap:6px;align-items:center;color:var(--muted);font-size:12px;font-weight:600">${ic('chart',14)} Medir por</span><div class="seg">${m.metrics.map(([v,l])=>`<button data-metric="${v}" class="${S.metric[k]===v?'on':''}">${l}</button>`).join('')}</div></div>`:'';
-  const rowsH=k==='general'?'':`<div class="frows">${m.groups.map(([g,icn,dims])=>`<div class="frow"><div class="k">${ic(icn,15)}${g}</div><div class="v">${dims.map(d=>`<button class="pill" data-dim="${d}" id="pill_${d}">${LBL[d]} ${ic('down',13)}</button>`).join('')}</div></div>`).join('')}</div>`;
+  const rowsH=k==='general'?'':`<div class="lgrid">${m.groups.map(([g,icn,dims])=>`<div class="lcard" style="--tone:${m.tone}"><div class="lhd">${ic(icn,15)}<span>${g}</span></div><div class="lpills">${dims.map(d=>`<button class="pill" data-dim="${d}" id="pill_${d}">${LBL[d]} ${ic('down',13)}</button>`).join('')}</div></div>`).join('')}</div>`;
   return `<section class="card filters">
    <div class="rangebar"><span class="lab">${ic('cal',14)} Rango:</span><div class="seg" id="presets">${[['all','Todo 2023'],['q1','T1'],['q2','T2'],['q3','T3'],['q4','T4'],['h1','1er semestre'],['h2','2do semestre']].map(([v,l])=>`<button data-preset="${v}">${l}</button>`).join('')}</div>
     <div class="dates"><label for="dFrom">Desde</label><input type="date" id="dFrom" min="2023-01-01" max="2023-12-31"><label for="dTo">Hasta</label><input type="date" id="dTo" min="2023-01-01" max="2023-12-31"></div></div>
