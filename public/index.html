@@ -939,6 +939,12 @@ button.lgi:hover{border-color:var(--accent)}
 .lgn{font-size:11.5px;color:var(--muted);margin-right:4px}
 .lyr{display:inline-flex;align-items:center;gap:8px;font-weight:700;cursor:pointer}
 .lyr input{accent-color:var(--accent);width:15px;height:15px;margin:0}
+.lgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.lcard{position:relative;display:flex;flex-direction:column;gap:8px;padding:12px 12px 12px 15px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);overflow:hidden;min-width:0}
+.lcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--tone)}
+.lcard .lyr span{line-height:1.25}
+.lcard .lcount{margin:-4px 0 0 23px;align-self:flex-start}
+.lpills{display:flex;flex-wrap:wrap;gap:6px}
 .lcount{align-self:center;font-size:11.5px;color:var(--muted);font-weight:700;margin-left:4px}
 .ltag{display:inline-flex;align-items:center;gap:6px;font-weight:600}
 /* búsqueda */
@@ -1690,7 +1696,7 @@ function wireSearch(ks){
 
 /* ---------- Colores de capas */
 const LAYC=k=>({acc:TK.cat[1],mal:TK.cat[5],cor:TK.cat[4],det:TK.cat[3],eve:TK.cat[2],bit:TK.cat[0]})[k];
-const GEO_L=[['acc','Accidentes viales',['tipo','danos','estatus','sector']],['mal','Mal estacionados',['evento','estatus','sector']],['cor','Vehículos al corralón',['tipo','marca','grua']],['det','Detenidos',['etilico','edad','autoridad']],['eve','Eventos y apoyos',['accion','dependencia','sector']],['bit','Bitácora',['clave','grupo','unidad']]];
+const GEO_L=[['acc','Accidentes viales',['tipo','danos','estatus','sector']],['mal','Mal estacionados',['evento','estatus','sector']],['cor','Vehículos al corralón',['tipo','marca','grua']],['det','Detenidos',['etilico','edad','autoridad']],['eve','Eventos y apoyos',['accion','dependencia','sector']]];
 const MAPMODES=[['cluster','Agrupado'],['points','Puntos'],['heat','Calor']];
 
 /* ---------- Mapa (Leaflet + red vial embebida) */
@@ -1860,13 +1866,13 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#modal').hidden
 S.geoOn={acc:true,mal:true,cor:true,det:true,eve:false,bit:false};S.geoVisible=true;
 function renderGeo(){
   const main=$('#main');
-  main.innerHTML=`<section class="card hero"><div><span class="datepill">${ic('cal',13)} <span id="rangeTxt"></span></span><h1>Mapa <em>georreferenciado</em></h1><p>Todos los módulos sobre la red vial de Torreón. Accidentes, mal estacionados, corralón y detenidos usan sus coordenadas; eventos y bitácora se ubican a partir del domicilio registrado.</p></div>
+  main.innerHTML=`<section class="card hero"><div><span class="datepill">${ic('cal',13)} <span id="rangeTxt"></span></span><h1>Mapa <em>georreferenciado</em></h1><p>Todos los módulos sobre la red vial de Torreón. Accidentes, mal estacionados, corralón y detenidos usan sus coordenadas; eventos y apoyos se ubican a partir del domicilio registrado.</p></div>
    <div class="herostat"><svg class="spark" id="spark" viewBox="0 0 220 52" preserveAspectRatio="none" aria-hidden="true"></svg><div class="bar"></div><div><div class="lbl">Puntos en el mapa</div><div class="big num" id="heroBig"></div><div class="of num" id="heroOf"></div></div></div></section>
    <section class="card filters">
     <div class="rangebar"><span class="lab">${ic('cal',14)} Rango:</span><div class="seg" id="presets">${[['all','Todo 2023'],['q1','T1'],['q2','T2'],['q3','T3'],['q4','T4'],['h1','1er semestre'],['h2','2do semestre']].map(([v,l])=>`<button data-preset="${v}">${l}</button>`).join('')}</div>
      <div class="dates"><label for="dFrom">Desde</label><input type="date" id="dFrom" min="2023-01-01" max="2023-12-31"><label for="dTo">Hasta</label><input type="date" id="dTo" min="2023-01-01" max="2023-12-31"></div></div>
     <div class="searchbar">${ic('filter',15)}<input type="search" id="q_geo" placeholder="Buscar en todas las capas: nombre, placa, serie, domicilio, colonia, agente…" value="${esc(S.q.acc||'')}" autocomplete="off" aria-label="Buscar"></div>
-    <div class="frows">${GEO_L.map(([k,l,dims])=>`<div class="frow"><div class="k"><label class="lyr"><input type="checkbox" data-layer="${k}" ${S.geoOn[k]?'checked':''}><i style="background:${LAYC(k)}"></i>${l}</label></div><div class="v">${dims.map(d=>`<button class="pill" data-gk="${k}" data-dim="${d}" id="pill_${k}_${d}">${LBL[d]} ${ic('down',13)}</button>`).join('')}<span class="lcount num" id="lc_${k}"></span></div></div>`).join('')}</div>
+    <div class="lgrid">${GEO_L.map(([k,l,dims])=>`<div class="lcard" style="--tone:${LAYC(k)}"><label class="lyr"><input type="checkbox" data-layer="${k}" ${S.geoOn[k]?'checked':''}><i style="background:${LAYC(k)}"></i><span>${l}</span></label><span class="lcount num" id="lc_${k}"></span><div class="lpills">${dims.map(d=>`<button class="pill" data-gk="${k}" data-dim="${d}" id="pill_${k}_${d}">${LBL[d]} ${ic('down',13)}</button>`).join('')}</div></div>`).join('')}</div>
     <div class="activebar"><span class="ttl">Filtros seleccionados</span><span class="showing">Los filtros de cada capa se comparten con su módulo</span><div class="chips" id="chips"></div></div>
    </section>
    <div class="grid"><section class="card cc"><div class="hd"><div><h3>${ic('map',16)}Mapa de la ciudad</h3><div class="sub">Clic en un punto para ver la ficha · pasa el cursor sobre una avenida para ver su nombre</div></div>
