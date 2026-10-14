@@ -1,4 +1,4 @@
-# Omega.TRC · Vialidad y Movilidad Urbana
+# Vialidad-TRC · Vialidad y Movilidad Urbana
 
 Plataforma directiva de indicadores de la Dirección de Vialidad de Torreón (datos 2023): panel general, mapa georreferenciado y módulos de accidentes viales, eventos y apoyos, bitácora, vehículos al corralón, mal estacionados y detenidos.
 
@@ -22,7 +22,7 @@ scripts/generar_datos.py   Regenera data/omega.json desde el Excel
    ```bash
    git init
    git add .
-   git commit -m "Plataforma Omega TRC"
+   git commit -m "Plataforma Vialidad TRC"
    git branch -M main
    git remote add origin https://github.com/TU-ORG/omega-vialidad-trc.git
    git push -u origin main
