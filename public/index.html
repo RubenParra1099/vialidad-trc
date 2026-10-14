@@ -1,0 +1,1955 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Omega Vialidad TRC</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+/* required styles */
+
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-container,
+.leaflet-pane > svg,
+.leaflet-pane > canvas,
+.leaflet-zoom-box,
+.leaflet-image-layer,
+.leaflet-layer {
+	position: absolute;
+	left: 0;
+	top: 0;
+	}
+.leaflet-container {
+	overflow: hidden;
+	}
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	-webkit-user-select: none;
+	   -moz-user-select: none;
+	        user-select: none;
+	  -webkit-user-drag: none;
+	}
+/* Prevents IE11 from highlighting tiles in blue */
+.leaflet-tile::selection {
+	background: transparent;
+}
+/* Safari renders non-retina tile on retina better with this, but Chrome is worse */
+.leaflet-safari .leaflet-tile {
+	image-rendering: -webkit-optimize-contrast;
+	}
+/* hack that prevents hw layers "stretching" when loading new tiles */
+.leaflet-safari .leaflet-tile-container {
+	width: 1600px;
+	height: 1600px;
+	-webkit-transform-origin: 0 0;
+	}
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	display: block;
+	}
+/* .leaflet-container svg: reset svg max-width decleration shipped in Joomla! (joomla.org) 3.x */
+/* .leaflet-container img: map is broken in FF if you have max-width: 100% on tiles */
+.leaflet-container .leaflet-overlay-pane svg {
+	max-width: none !important;
+	max-height: none !important;
+	}
+.leaflet-container .leaflet-marker-pane img,
+.leaflet-container .leaflet-shadow-pane img,
+.leaflet-container .leaflet-tile-pane img,
+.leaflet-container img.leaflet-image-layer,
+.leaflet-container .leaflet-tile {
+	max-width: none !important;
+	max-height: none !important;
+	width: auto;
+	padding: 0;
+	}
+
+.leaflet-container img.leaflet-tile {
+	/* See: https://bugs.chromium.org/p/chromium/issues/detail?id=600120 */
+	mix-blend-mode: plus-lighter;
+}
+
+.leaflet-container.leaflet-touch-zoom {
+	-ms-touch-action: pan-x pan-y;
+	touch-action: pan-x pan-y;
+	}
+.leaflet-container.leaflet-touch-drag {
+	-ms-touch-action: pinch-zoom;
+	/* Fallback for FF which doesn't support pinch-zoom */
+	touch-action: none;
+	touch-action: pinch-zoom;
+}
+.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom {
+	-ms-touch-action: none;
+	touch-action: none;
+}
+.leaflet-container {
+	-webkit-tap-highlight-color: transparent;
+}
+.leaflet-container a {
+	-webkit-tap-highlight-color: rgba(51, 181, 229, 0.4);
+}
+.leaflet-tile {
+	filter: inherit;
+	visibility: hidden;
+	}
+.leaflet-tile-loaded {
+	visibility: inherit;
+	}
+.leaflet-zoom-box {
+	width: 0;
+	height: 0;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	z-index: 800;
+	}
+/* workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=888319 */
+.leaflet-overlay-pane svg {
+	-moz-user-select: none;
+	}
+
+.leaflet-pane         { z-index: 400; }
+
+.leaflet-tile-pane    { z-index: 200; }
+.leaflet-overlay-pane { z-index: 400; }
+.leaflet-shadow-pane  { z-index: 500; }
+.leaflet-marker-pane  { z-index: 600; }
+.leaflet-tooltip-pane   { z-index: 650; }
+.leaflet-popup-pane   { z-index: 700; }
+
+.leaflet-map-pane canvas { z-index: 100; }
+.leaflet-map-pane svg    { z-index: 200; }
+
+.leaflet-vml-shape {
+	width: 1px;
+	height: 1px;
+	}
+.lvml {
+	behavior: url(#default#VML);
+	display: inline-block;
+	position: absolute;
+	}
+
+
+/* control positioning */
+
+.leaflet-control {
+	position: relative;
+	z-index: 800;
+	pointer-events: visiblePainted; /* IE 9-10 doesn't have auto */
+	pointer-events: auto;
+	}
+.leaflet-top,
+.leaflet-bottom {
+	position: absolute;
+	z-index: 1000;
+	pointer-events: none;
+	}
+.leaflet-top {
+	top: 0;
+	}
+.leaflet-right {
+	right: 0;
+	}
+.leaflet-bottom {
+	bottom: 0;
+	}
+.leaflet-left {
+	left: 0;
+	}
+.leaflet-control {
+	float: left;
+	clear: both;
+	}
+.leaflet-right .leaflet-control {
+	float: right;
+	}
+.leaflet-top .leaflet-control {
+	margin-top: 10px;
+	}
+.leaflet-bottom .leaflet-control {
+	margin-bottom: 10px;
+	}
+.leaflet-left .leaflet-control {
+	margin-left: 10px;
+	}
+.leaflet-right .leaflet-control {
+	margin-right: 10px;
+	}
+
+
+/* zoom and fade animations */
+
+.leaflet-fade-anim .leaflet-popup {
+	opacity: 0;
+	-webkit-transition: opacity 0.2s linear;
+	   -moz-transition: opacity 0.2s linear;
+	        transition: opacity 0.2s linear;
+	}
+.leaflet-fade-anim .leaflet-map-pane .leaflet-popup {
+	opacity: 1;
+	}
+.leaflet-zoom-animated {
+	-webkit-transform-origin: 0 0;
+	    -ms-transform-origin: 0 0;
+	        transform-origin: 0 0;
+	}
+svg.leaflet-zoom-animated {
+	will-change: transform;
+}
+
+.leaflet-zoom-anim .leaflet-zoom-animated {
+	-webkit-transition: -webkit-transform 0.25s cubic-bezier(0,0,0.25,1);
+	   -moz-transition:    -moz-transform 0.25s cubic-bezier(0,0,0.25,1);
+	        transition:         transform 0.25s cubic-bezier(0,0,0.25,1);
+	}
+.leaflet-zoom-anim .leaflet-tile,
+.leaflet-pan-anim .leaflet-tile {
+	-webkit-transition: none;
+	   -moz-transition: none;
+	        transition: none;
+	}
+
+.leaflet-zoom-anim .leaflet-zoom-hide {
+	visibility: hidden;
+	}
+
+
+/* cursors */
+
+.leaflet-interactive {
+	cursor: pointer;
+	}
+.leaflet-grab {
+	cursor: -webkit-grab;
+	cursor:    -moz-grab;
+	cursor:         grab;
+	}
+.leaflet-crosshair,
+.leaflet-crosshair .leaflet-interactive {
+	cursor: crosshair;
+	}
+.leaflet-popup-pane,
+.leaflet-control {
+	cursor: auto;
+	}
+.leaflet-dragging .leaflet-grab,
+.leaflet-dragging .leaflet-grab .leaflet-interactive,
+.leaflet-dragging .leaflet-marker-draggable {
+	cursor: move;
+	cursor: -webkit-grabbing;
+	cursor:    -moz-grabbing;
+	cursor:         grabbing;
+	}
+
+/* marker & overlays interactivity */
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-image-layer,
+.leaflet-pane > svg path,
+.leaflet-tile-container {
+	pointer-events: none;
+	}
+
+.leaflet-marker-icon.leaflet-interactive,
+.leaflet-image-layer.leaflet-interactive,
+.leaflet-pane > svg path.leaflet-interactive,
+svg.leaflet-image-layer.leaflet-interactive path {
+	pointer-events: visiblePainted; /* IE 9-10 doesn't have auto */
+	pointer-events: auto;
+	}
+
+/* visual tweaks */
+
+.leaflet-container {
+	background: #ddd;
+	outline-offset: 1px;
+	}
+.leaflet-container a {
+	color: #0078A8;
+	}
+.leaflet-zoom-box {
+	border: 2px dotted #38f;
+	background: rgba(255,255,255,0.5);
+	}
+
+
+/* general typography */
+.leaflet-container {
+	font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	font-size: 0.75rem;
+	line-height: 1.5;
+	}
+
+
+/* general toolbar styles */
+
+.leaflet-bar {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+	border-radius: 4px;
+	}
+.leaflet-bar a {
+	background-color: #fff;
+	border-bottom: 1px solid #ccc;
+	width: 26px;
+	height: 26px;
+	line-height: 26px;
+	display: block;
+	text-align: center;
+	text-decoration: none;
+	color: black;
+	}
+.leaflet-bar a,
+.leaflet-control-layers-toggle {
+	background-position: 50% 50%;
+	background-repeat: no-repeat;
+	display: block;
+	}
+.leaflet-bar a:hover,
+.leaflet-bar a:focus {
+	background-color: #f4f4f4;
+	}
+.leaflet-bar a:first-child {
+	border-top-left-radius: 4px;
+	border-top-right-radius: 4px;
+	}
+.leaflet-bar a:last-child {
+	border-bottom-left-radius: 4px;
+	border-bottom-right-radius: 4px;
+	border-bottom: none;
+	}
+.leaflet-bar a.leaflet-disabled {
+	cursor: default;
+	background-color: #f4f4f4;
+	color: #bbb;
+	}
+
+.leaflet-touch .leaflet-bar a {
+	width: 30px;
+	height: 30px;
+	line-height: 30px;
+	}
+.leaflet-touch .leaflet-bar a:first-child {
+	border-top-left-radius: 2px;
+	border-top-right-radius: 2px;
+	}
+.leaflet-touch .leaflet-bar a:last-child {
+	border-bottom-left-radius: 2px;
+	border-bottom-right-radius: 2px;
+	}
+
+/* zoom control */
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+	font: bold 18px 'Lucida Console', Monaco, monospace;
+	text-indent: 1px;
+	}
+
+.leaflet-touch .leaflet-control-zoom-in, .leaflet-touch .leaflet-control-zoom-out  {
+	font-size: 22px;
+	}
+
+
+/* layers control */
+
+.leaflet-control-layers {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+	background: #fff;
+	border-radius: 5px;
+	}
+.leaflet-control-layers-toggle {
+	background-image: url(images/layers.png);
+	width: 36px;
+	height: 36px;
+	}
+.leaflet-retina .leaflet-control-layers-toggle {
+	background-image: url(images/layers-2x.png);
+	background-size: 26px 26px;
+	}
+.leaflet-touch .leaflet-control-layers-toggle {
+	width: 44px;
+	height: 44px;
+	}
+.leaflet-control-layers .leaflet-control-layers-list,
+.leaflet-control-layers-expanded .leaflet-control-layers-toggle {
+	display: none;
+	}
+.leaflet-control-layers-expanded .leaflet-control-layers-list {
+	display: block;
+	position: relative;
+	}
+.leaflet-control-layers-expanded {
+	padding: 6px 10px 6px 6px;
+	color: #333;
+	background: #fff;
+	}
+.leaflet-control-layers-scrollbar {
+	overflow-y: scroll;
+	overflow-x: hidden;
+	padding-right: 5px;
+	}
+.leaflet-control-layers-selector {
+	margin-top: 2px;
+	position: relative;
+	top: 1px;
+	}
+.leaflet-control-layers label {
+	display: block;
+	font-size: 13px;
+	font-size: 1.08333em;
+	}
+.leaflet-control-layers-separator {
+	height: 0;
+	border-top: 1px solid #ddd;
+	margin: 5px -10px 5px -6px;
+	}
+
+/* Default icon URLs */
+.leaflet-default-icon-path { /* used only in path-guessing heuristic, see L.Icon.Default */
+	background-image: url(images/marker-icon.png);
+	}
+
+
+/* attribution and scale controls */
+
+.leaflet-container .leaflet-control-attribution {
+	background: #fff;
+	background: rgba(255, 255, 255, 0.8);
+	margin: 0;
+	}
+.leaflet-control-attribution,
+.leaflet-control-scale-line {
+	padding: 0 5px;
+	color: #333;
+	line-height: 1.4;
+	}
+.leaflet-control-attribution a {
+	text-decoration: none;
+	}
+.leaflet-control-attribution a:hover,
+.leaflet-control-attribution a:focus {
+	text-decoration: underline;
+	}
+.leaflet-attribution-flag {
+	display: inline !important;
+	vertical-align: baseline !important;
+	width: 1em;
+	height: 0.6669em;
+	}
+.leaflet-left .leaflet-control-scale {
+	margin-left: 5px;
+	}
+.leaflet-bottom .leaflet-control-scale {
+	margin-bottom: 5px;
+	}
+.leaflet-control-scale-line {
+	border: 2px solid #777;
+	border-top: none;
+	line-height: 1.1;
+	padding: 2px 5px 1px;
+	white-space: nowrap;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	background: rgba(255, 255, 255, 0.8);
+	text-shadow: 1px 1px #fff;
+	}
+.leaflet-control-scale-line:not(:first-child) {
+	border-top: 2px solid #777;
+	border-bottom: none;
+	margin-top: -2px;
+	}
+.leaflet-control-scale-line:not(:first-child):not(:last-child) {
+	border-bottom: 2px solid #777;
+	}
+
+.leaflet-touch .leaflet-control-attribution,
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	box-shadow: none;
+	}
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	border: 2px solid rgba(0,0,0,0.2);
+	background-clip: padding-box;
+	}
+
+
+/* popup */
+
+.leaflet-popup {
+	position: absolute;
+	text-align: center;
+	margin-bottom: 20px;
+	}
+.leaflet-popup-content-wrapper {
+	padding: 1px;
+	text-align: left;
+	border-radius: 12px;
+	}
+.leaflet-popup-content {
+	margin: 13px 24px 13px 20px;
+	line-height: 1.3;
+	font-size: 13px;
+	font-size: 1.08333em;
+	min-height: 1px;
+	}
+.leaflet-popup-content p {
+	margin: 17px 0;
+	margin: 1.3em 0;
+	}
+.leaflet-popup-tip-container {
+	width: 40px;
+	height: 20px;
+	position: absolute;
+	left: 50%;
+	margin-top: -1px;
+	margin-left: -20px;
+	overflow: hidden;
+	pointer-events: none;
+	}
+.leaflet-popup-tip {
+	width: 17px;
+	height: 17px;
+	padding: 1px;
+
+	margin: -10px auto 0;
+	pointer-events: auto;
+
+	-webkit-transform: rotate(45deg);
+	   -moz-transform: rotate(45deg);
+	    -ms-transform: rotate(45deg);
+	        transform: rotate(45deg);
+	}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+	background: white;
+	color: #333;
+	box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+	}
+.leaflet-container a.leaflet-popup-close-button {
+	position: absolute;
+	top: 0;
+	right: 0;
+	border: none;
+	text-align: center;
+	width: 24px;
+	height: 24px;
+	font: 16px/24px Tahoma, Verdana, sans-serif;
+	color: #757575;
+	text-decoration: none;
+	background: transparent;
+	}
+.leaflet-container a.leaflet-popup-close-button:hover,
+.leaflet-container a.leaflet-popup-close-button:focus {
+	color: #585858;
+	}
+.leaflet-popup-scrolled {
+	overflow: auto;
+	}
+
+.leaflet-oldie .leaflet-popup-content-wrapper {
+	-ms-zoom: 1;
+	}
+.leaflet-oldie .leaflet-popup-tip {
+	width: 24px;
+	margin: 0 auto;
+
+	-ms-filter: "progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678)";
+	filter: progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678);
+	}
+
+.leaflet-oldie .leaflet-control-zoom,
+.leaflet-oldie .leaflet-control-layers,
+.leaflet-oldie .leaflet-popup-content-wrapper,
+.leaflet-oldie .leaflet-popup-tip {
+	border: 1px solid #999;
+	}
+
+
+/* div icon */
+
+.leaflet-div-icon {
+	background: #fff;
+	border: 1px solid #666;
+	}
+
+
+/* Tooltip */
+/* Base styles for the element that has a tooltip */
+.leaflet-tooltip {
+	position: absolute;
+	padding: 6px;
+	background-color: #fff;
+	border: 1px solid #fff;
+	border-radius: 3px;
+	color: #222;
+	white-space: nowrap;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	pointer-events: none;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+	}
+.leaflet-tooltip.leaflet-interactive {
+	cursor: pointer;
+	pointer-events: auto;
+	}
+.leaflet-tooltip-top:before,
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	position: absolute;
+	pointer-events: none;
+	border: 6px solid transparent;
+	background: transparent;
+	content: "";
+	}
+
+/* Directions */
+
+.leaflet-tooltip-bottom {
+	margin-top: 6px;
+}
+.leaflet-tooltip-top {
+	margin-top: -6px;
+}
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-top:before {
+	left: 50%;
+	margin-left: -6px;
+	}
+.leaflet-tooltip-top:before {
+	bottom: 0;
+	margin-bottom: -12px;
+	border-top-color: #fff;
+	}
+.leaflet-tooltip-bottom:before {
+	top: 0;
+	margin-top: -12px;
+	margin-left: -6px;
+	border-bottom-color: #fff;
+	}
+.leaflet-tooltip-left {
+	margin-left: -6px;
+}
+.leaflet-tooltip-right {
+	margin-left: 6px;
+}
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	top: 50%;
+	margin-top: -6px;
+	}
+.leaflet-tooltip-left:before {
+	right: 0;
+	margin-right: -12px;
+	border-left-color: #fff;
+	}
+.leaflet-tooltip-right:before {
+	left: 0;
+	margin-left: -12px;
+	border-right-color: #fff;
+	}
+
+/* Printing */
+
+@media print {
+	/* Prevent printers from removing background-images of controls. */
+	.leaflet-control {
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+		}
+	}
+
+.leaflet-cluster-anim .leaflet-marker-icon, .leaflet-cluster-anim .leaflet-marker-shadow {
+	-webkit-transition: -webkit-transform 0.3s ease-out, opacity 0.3s ease-in;
+	-moz-transition: -moz-transform 0.3s ease-out, opacity 0.3s ease-in;
+	-o-transition: -o-transform 0.3s ease-out, opacity 0.3s ease-in;
+	transition: transform 0.3s ease-out, opacity 0.3s ease-in;
+}
+
+.leaflet-cluster-spider-leg {
+	/* stroke-dashoffset (duration and function) should match with leaflet-marker-icon transform in order to track it exactly */
+	-webkit-transition: -webkit-stroke-dashoffset 0.3s ease-out, -webkit-stroke-opacity 0.3s ease-in;
+	-moz-transition: -moz-stroke-dashoffset 0.3s ease-out, -moz-stroke-opacity 0.3s ease-in;
+	-o-transition: -o-stroke-dashoffset 0.3s ease-out, -o-stroke-opacity 0.3s ease-in;
+	transition: stroke-dashoffset 0.3s ease-out, stroke-opacity 0.3s ease-in;
+}
+
+/* Layout: barra superior + navegación lateral de módulos + lienzo con hero, panel de filtros, KPIs y rejilla de 12 columnas.
+   Dark-first, inspirado en el panel Arg.Os (slate profundo, acentos cian→azul, ámbar para cifras). */
+:root{
+  --bg:#020617; --side:#0b1224; --panel:#0c1427; --panel2:#111b33; --raise:#16213d;
+  --line:#1e293b; --line2:#2a3854;
+  --fg:#f1f5f9; --muted:#94a3b8; --faint:#64748b;
+  --accent:#22d3ee; --accent2:#3b82f6; --amber:#f59e0b; --rose:#f43f5e; --ok:#10b981;
+  --chip:#0e7490; --chipbg:rgba(34,211,238,.12);
+  --c1:#0891b2; --c2:#db2777; --c3:#2563eb; --c4:#d97706; --c5:#8b5cf6; --c6:#059669; --c7:#ea580c; --cx:#64748b;
+  --seq0:#0f1a31; --seq1:#22d3ee; --fade:#22314f;
+  --shadow:0 10px 30px -12px rgba(0,0,0,.6);
+  --font:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){
+  --bg:#eef2f7; --side:#ffffff; --panel:#ffffff; --panel2:#f6f8fb; --raise:#eef2f7;
+  --line:#e2e8f0; --line2:#cbd5e1;
+  --fg:#0f172a; --muted:#475569; --faint:#64748b;
+  --accent:#0891b2; --accent2:#2563eb; --amber:#d97706; --rose:#e11d48; --ok:#059669;
+  --chip:#0e7490; --chipbg:rgba(8,145,178,.10);
+  --seq0:#f1f5f9; --seq1:#0891b2; --fade:#dbe3ee;
+  --shadow:0 10px 30px -18px rgba(15,23,42,.35);
+  color-scheme:light;
+}}
+:root[data-theme="light"]{
+  --bg:#eef2f7; --side:#ffffff; --panel:#ffffff; --panel2:#f6f8fb; --raise:#eef2f7;
+  --line:#e2e8f0; --line2:#cbd5e1;
+  --fg:#0f172a; --muted:#475569; --faint:#64748b;
+  --accent:#0891b2; --accent2:#2563eb; --amber:#d97706; --rose:#e11d48; --ok:#059669;
+  --chip:#0e7490; --chipbg:rgba(8,145,178,.10);
+  --seq0:#f1f5f9; --seq1:#0891b2; --fade:#dbe3ee;
+  --shadow:0 10px 30px -18px rgba(15,23,42,.35);
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- Topbar */
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;height:56px;display:flex;align-items:center;gap:14px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  background:color-mix(in oklab,var(--side) 92%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.iconbtn{width:36px;height:36px;display:grid;place-items:center;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--muted)}
+.iconbtn:hover{color:var(--fg);border-color:var(--line2)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;letter-spacing:-.01em}
+.brand .mark{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.brand b{color:var(--rose)}
+.topbar .spacer{flex:1}
+.topbar .where{color:var(--muted);font-size:13px;font-weight:600}
+@media (max-width:640px){.topbar .where{display:none}}
+
+/* ---------- Shell */
+.shell{display:grid;grid-template-columns:272px minmax(0,1fr);min-height:calc(100% - 56px)}
+.app.min .shell{grid-template-columns:76px minmax(0,1fr)}
+.side{position:sticky;top:calc(56px + env(safe-area-inset-top,0px));height:calc(100vh - 56px - env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:10px;
+  padding:16px 14px;padding-left:max(14px,env(safe-area-inset-left,0px));background:var(--side);border-right:1px solid var(--line);overflow-y:auto}
+.navbtn{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 12px;border-radius:12px;border:1px solid var(--line);
+  background:var(--panel2);position:relative;overflow:hidden;transition:border-color .15s,background .15s}
+.navbtn::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--tone,var(--line2))}
+.navbtn:hover{border-color:var(--line2)}
+.navbtn.on{background:var(--raise);border-color:var(--line2)}
+.navbtn svg{flex:none;color:var(--tone,var(--muted))}
+.navbtn .t{font-weight:700;font-size:13.5px;display:block}
+.navbtn .s{font-size:11.5px;color:var(--muted);display:block}
+.navbtn .n{margin-left:auto;font-size:11px;color:var(--muted);font-weight:700}
+.minbtn{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--fg);font-weight:600;font-size:13px}
+.app.min .navbtn .txt,.app.min .navbtn .n,.app.min .minbtn span,.app.min .side .foot{display:none}
+.app.min .navbtn{justify-content:center;padding:12px 0}
+.side .foot{margin-top:auto;font-size:11.5px;color:var(--faint);border-top:1px solid var(--line);padding-top:12px;display:grid;gap:6px}
+.side .foot strong{color:var(--muted);font-weight:700}
+
+/* mobile nav */
+.mnav{display:none}
+@media (max-width:900px){
+  .shell,.app.min .shell{grid-template-columns:minmax(0,1fr)}
+  .side{display:none}
+  .mnav{display:flex;gap:8px;overflow-x:auto;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));border-bottom:1px solid var(--line);background:var(--side)}
+  .mnav button{flex:none;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);font-weight:600;font-size:12.5px;white-space:nowrap}
+  .mnav button.on{border-color:var(--accent);color:var(--accent);background:var(--chipbg)}
+  #menuBtn{display:none}
+}
+
+/* ---------- Main */
+main{min-width:0;padding-block:22px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:18px;align-content:start}
+@media (min-width:901px){main{padding-left:24px;padding-right:max(24px,env(safe-area-inset-right,0px))}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+
+/* hero */
+.hero{position:relative;overflow:hidden;padding:20px 24px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:end}
+.hero::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--accent2) 0%,var(--accent) 45%,var(--amber) 100%)}
+.datepill{display:inline-flex;align-items:center;gap:8px;padding:5px 11px;border-radius:999px;border:1px solid var(--line2);background:var(--panel2);font-size:12px;color:var(--muted);font-weight:600}
+.hero h1{margin:12px 0 4px;font-size:clamp(26px,3.4vw,38px);line-height:1.08;font-weight:800;letter-spacing:-.02em;text-wrap:balance}
+.hero h1 em{font-style:normal;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{margin:0;color:var(--muted);font-size:13.5px;max-width:62ch}
+.herostat{display:flex;gap:16px;align-items:stretch}
+.herostat .bar{width:4px;border-radius:4px;background:var(--amber)}
+.herostat .lbl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.herostat .big{font-size:clamp(30px,4vw,44px);font-weight:800;letter-spacing:-.02em;line-height:1.05}
+.herostat .of{font-size:12px;color:var(--muted)}
+.spark{display:block;width:220px;height:52px}
+@media (max-width:720px){.hero{grid-template-columns:minmax(0,1fr)} .spark{width:100%}}
+
+/* filters */
+.filters{padding:16px 18px;display:grid;gap:12px}
+.rangebar{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.rangebar .lab{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;font-weight:600;margin-right:2px}
+.seg{display:inline-flex;flex-wrap:wrap;gap:4px}
+.seg button{padding:5px 11px;border-radius:9px;border:1px solid transparent;background:var(--panel2);font-size:12px;font-weight:700;color:var(--muted)}
+.seg button:hover{color:var(--fg)}
+.seg button.on{background:var(--fg);color:var(--bg)}
+.dates{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12px;color:var(--muted);font-weight:600}
+.dates input{background:var(--panel2);border:1px solid var(--line2);border-radius:9px;padding:5px 8px;font-size:12.5px}
+.frows{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.frow{display:grid;grid-template-columns:150px minmax(0,1fr);align-items:center;gap:10px;padding:8px 12px;border-top:1px solid var(--line);background:var(--panel2)}
+.frow:first-child{border-top:0}
+.frow .k{display:flex;align-items:center;gap:8px;font-weight:700;font-size:12.5px}
+.frow .k svg{color:var(--muted)}
+.frow .v{display:flex;flex-wrap:wrap;gap:6px}
+@media (max-width:560px){.frow{grid-template-columns:minmax(0,1fr)}}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:9px;border:1px solid var(--line2);background:var(--panel);font-size:12px;font-weight:600;color:var(--fg)}
+.pill:hover{border-color:var(--accent)}
+.pill.act{border-color:var(--accent);background:var(--chipbg);color:var(--accent)}
+.pill .cnt{background:var(--accent);color:var(--bg);border-radius:6px;padding:0 5px;font-size:10.5px;font-weight:800}
+.metricbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.activebar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:space-between;font-size:12px}
+.activebar .ttl{font-weight:800}
+.activebar .showing{color:var(--muted)} .activebar .showing b{color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;width:100%}
+.chips .none{color:var(--faint);font-size:12px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 6px 3px 10px;border-radius:999px;background:var(--chipbg);border:1px solid color-mix(in oklab,var(--accent) 40%,transparent);color:var(--fg);font-size:11.5px;font-weight:600}
+.chip i{font-style:normal;color:var(--muted);font-weight:500}
+.chip button{border:0;background:transparent;color:var(--muted);width:18px;height:18px;display:grid;place-items:center;border-radius:50%}
+.chip button:hover{background:var(--line2);color:var(--fg)}
+.linkbtn{border:1px solid var(--line2);background:transparent;border-radius:9px;padding:5px 10px;font-size:12px;font-weight:700;color:var(--muted)}
+.linkbtn:hover{color:var(--fg)}
+
+/* popover */
+.pop{position:fixed;z-index:60;width:300px;max-width:calc(100vw - 32px);background:var(--panel);border:1px solid var(--line2);border-radius:14px;box-shadow:0 20px 50px -10px rgba(0,0,0,.5);display:flex;flex-direction:column;max-height:min(440px,70vh)}
+.pop header{padding:10px 12px;border-bottom:1px solid var(--line);display:grid;gap:8px}
+.pop header .h{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:13px}
+.pop input[type=search]{width:100%;background:var(--panel2);border:1px solid var(--line2);border-radius:9px;padding:6px 9px;font-size:12.5px}
+.pop ul{list-style:none;margin:0;padding:6px;overflow-y:auto}
+.pop li label{display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:8px;align-items:center;padding:6px 8px;border-radius:8px;font-size:12.5px;cursor:pointer}
+.pop li label:hover{background:var(--panel2)}
+.pop li .nm{overflow-wrap:anywhere}
+.pop li .c{color:var(--muted);font-size:11.5px;font-weight:700}
+.pop li.zero .nm{color:var(--faint)}
+.pop input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px;margin:0}
+.pop footer{padding:8px 12px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:8px}
+
+/* kpis */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));padding:0;overflow:hidden}
+.kpi{padding:16px 18px;border-left:1px solid var(--line);min-width:0}
+.kpi:first-child{border-left:0}
+.kpi .l{font-size:12px;color:var(--muted);font-weight:600}
+.kpi .v{font-size:28px;font-weight:800;letter-spacing:-.02em;margin-top:4px;overflow-wrap:anywhere}
+.kpi .v.sm{font-size:18px;line-height:1.25;margin-top:8px}
+.kpi .s{font-size:11.5px;color:var(--faint);margin-top:2px}
+.kpi .meter{height:5px;border-radius:5px;background:var(--line);margin-top:10px;overflow:hidden}
+.kpi .meter i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:5px}
+.tone-accent{color:var(--accent)} .tone-rose{color:var(--rose)} .tone-amber{color:var(--amber)} .tone-ok{color:var(--ok)}
+@media (max-width:560px){.kpi{border-left:0;border-top:1px solid var(--line)} .kpi:first-child{border-top:0}}
+
+/* grid of charts */
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px}
+.cc{grid-column:span 12;padding:16px 16px 12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+@media (min-width:1100px){.s4{grid-column:span 4}.s6{grid-column:span 6}.s8{grid-column:span 8}.s5{grid-column:span 5}.s7{grid-column:span 7}}
+@media (min-width:700px) and (max-width:1099px){.s4,.s6{grid-column:span 6}}
+.cc .hd{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-start;justify-content:space-between}
+.cc h3{margin:0;font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px}
+.cc h3 svg{color:var(--accent)}
+.cc .sub{font-size:12px;color:var(--muted);margin-top:2px}
+.cc .tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.cc .tools select{background:var(--panel2);border:1px solid var(--line2);border-radius:9px;padding:4px 8px;font-size:12px;font-weight:600}
+.minis{display:inline-flex;padding:3px;gap:2px;border-radius:10px;background:var(--panel2);border:1px solid var(--line)}
+.minis button{border:0;background:transparent;padding:3px 9px;border-radius:7px;font-size:11.5px;font-weight:700;color:var(--muted)}
+.minis button.on{background:var(--chipbg);color:var(--accent)}
+.ch{width:100%;min-height:260px}
+.hint{font-size:11px;color:var(--faint)}
+
+/* pivot + table */
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{position:sticky;top:0;background:var(--panel2);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
+td.r,th.r{text-align:right}
+tbody tr:hover td{background:var(--panel2)}
+.pv td.cell{cursor:pointer;text-align:right;font-variant-numeric:tabular-nums}
+.pv td.cell:hover{outline:1px solid var(--accent);outline-offset:-1px}
+.pv td.rh{font-weight:700;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+.pv tr.tot td{font-weight:800;background:var(--panel2)}
+.tag{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid var(--line2)}
+.tag.ok{color:var(--ok);border-color:color-mix(in oklab,var(--ok) 45%,transparent)}
+.tag.no{color:var(--rose);border-color:color-mix(in oklab,var(--rose) 45%,transparent)}
+.pager{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.pager .b{display:flex;gap:6px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:10px;font-weight:700;font-size:12.5px;z-index:80}
+.copybox{width:100%;height:120px;font-size:11px;background:var(--panel2);border:1px solid var(--line2);border-radius:9px;color:var(--fg)}
+
+/* overview tiles */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.tile{padding:16px;display:grid;gap:8px;text-align:left;border-radius:16px;border:1px solid var(--line);background:var(--panel);position:relative;overflow:hidden;box-shadow:var(--shadow)}
+.tile::before{content:"";position:absolute;left:0;top:0;right:0;height:3px;background:var(--tone)}
+.tile:hover{border-color:var(--line2)}
+.tile .h{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px}
+.tile .h svg{color:var(--tone)}
+.tile .v{font-size:28px;font-weight:800;letter-spacing:-.02em}
+.tile .s{font-size:11.5px;color:var(--muted)}
+.tile svg.mb{width:100%;height:38px;display:block}
+.tile .go{font-size:11.5px;color:var(--accent);font-weight:700}
+/* mapas */
+:root{--mapbg:#081022;--road0:#5d7396;--road1:#40557a;--road2:#304464;--road3:#283955;--road4:#1b2843}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--mapbg:#e6eaf0;--road0:#f0bf5f;--road1:#f6d999;--road2:#fff8e6;--road3:#ffffff;--road4:#ffffff}}
+:root[data-theme="light"]{--mapbg:#e6eaf0;--road0:#f0bf5f;--road1:#f6d999;--road2:#fff8e6;--road3:#ffffff;--road4:#ffffff}
+.lmap{width:100%;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:var(--mapbg);z-index:0}
+.leaflet-container{background:var(--mapbg);font-family:var(--font);outline:0}
+.leaflet-bar{border:1px solid var(--line2)!important;box-shadow:none!important;border-radius:10px!important;overflow:hidden}
+.leaflet-bar a{background:var(--panel)!important;color:var(--fg)!important;border-bottom:1px solid var(--line)!important}
+.leaflet-bar a:hover{background:var(--panel2)!important}
+.leaflet-control-attribution{background:color-mix(in oklab,var(--panel) 82%,transparent)!important;color:var(--faint)!important;font-size:10.5px}
+.leaflet-control-attribution a{color:var(--muted)!important}
+.leaflet-control-scale-line{background:color-mix(in oklab,var(--panel) 80%,transparent);border-color:var(--muted);color:var(--fg)}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--panel);color:var(--fg);border:1px solid var(--line2);box-shadow:0 18px 40px -12px rgba(0,0,0,.55)}
+.leaflet-popup-content-wrapper{border-radius:14px}
+.leaflet-popup-content{margin:12px 14px;font-size:12.5px;line-height:1.45}
+.leaflet-container a.leaflet-popup-close-button{color:var(--muted)}
+.leaflet-tooltip.road{background:var(--panel);color:var(--fg);border:1px solid var(--line2);font-size:11.5px;font-weight:700;box-shadow:none;border-radius:8px;padding:3px 8px}
+.leaflet-tooltip.road::before{display:none}
+.dot i{display:block;width:12px;height:12px;border-radius:50%;border:2px solid var(--panel);box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+.clu{background:color-mix(in oklab,var(--accent) 28%,transparent);border-radius:50%;display:grid!important;place-items:center}
+.clu span{display:grid;place-items:center;width:calc(100% - 8px);height:calc(100% - 8px);border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-weight:800;font-size:11.5px}
+.pp .pk,.mhd .pk{display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.pk i,.ltag i,.lgi i,.lyr i{display:inline-block;width:10px;height:10px;border-radius:50%;flex:none}
+.pp h4{margin:4px 0 2px;font-size:14px;font-weight:800}
+.pp .pm{color:var(--muted);font-size:11.5px;margin-bottom:8px}
+.pp dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px;margin:0 0 10px}
+.pp dt{color:var(--muted);font-size:11px}
+.pp dd{margin:0;font-weight:600;overflow-wrap:anywhere}
+.mlegend{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:26px}
+.lgi{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;border:1px solid var(--line2);background:var(--panel2);font-size:11.5px;font-weight:600;color:var(--fg)}
+.lgi b{color:var(--muted);font-weight:700}
+button.lgi:hover{border-color:var(--accent)}
+.lgi.off{opacity:.4}
+.lgn{font-size:11.5px;color:var(--muted);margin-right:4px}
+.lyr{display:inline-flex;align-items:center;gap:8px;font-weight:700;cursor:pointer}
+.lyr input{accent-color:var(--accent);width:15px;height:15px;margin:0}
+.lcount{align-self:center;font-size:11.5px;color:var(--muted);font-weight:700;margin-left:4px}
+.ltag{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+/* búsqueda */
+.searchbar{display:flex;align-items:center;gap:10px;padding:0 12px;border:1px solid var(--line2);border-radius:12px;background:var(--panel2)}
+.searchbar svg{color:var(--accent);flex:none}
+.searchbar input{flex:1;min-width:0;border:0;background:transparent;padding:10px 0;font-size:13.5px;outline:0}
+.searchbar:focus-within{border-color:var(--accent)}
+/* tablas */
+.gbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;font-size:12.5px;color:var(--muted)}
+.gbar b{color:var(--accent)}
+.gtools{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.gtools select{background:var(--panel2);border:1px solid var(--line2);border-radius:8px;padding:3px 6px;font-size:12px}
+.gt{max-height:600px;overflow:auto}
+.gt th.srt{cursor:pointer;user-select:none}
+.gt th.srt:hover{color:var(--fg)}
+.gt tr.fr th{top:31px;padding:4px 6px;background:var(--panel2)}
+.gt tr.fr input{width:100%;min-width:76px;background:var(--panel);border:1px solid var(--line2);border-radius:7px;padding:4px 7px;font-size:11.5px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--fg)}
+.gt tr.fr input:focus{border-color:var(--accent);outline:0}
+.gt tbody tr{cursor:pointer}
+td.long{max-width:300px;overflow:hidden;text-overflow:ellipsis}
+td .z{color:var(--faint)}
+.emptyrow{color:var(--muted);cursor:default}
+/* ficha */
+.modal{position:fixed;inset:0;z-index:90;background:rgba(2,6,23,.62);display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.mbox{width:min(980px,100%);max-height:88vh;overflow:auto;padding:20px 22px;display:grid;gap:16px}
+.mhd{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.mhd h2{margin:6px 0 2px;font-size:22px;font-weight:800;letter-spacing:-.01em}
+.mhd .sub{color:var(--muted);font-size:12.5px}
+.mhd .tools{display:flex;gap:8px;align-items:center}
+.dl{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px 18px}
+.dl span,.ltxt span{display:block;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:700;margin-bottom:2px}
+.dl b{font-weight:600;overflow-wrap:anywhere}
+.ltxt p{margin:0;padding:10px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;line-height:1.5;max-width:none}
+.mh3{display:flex;align-items:center;gap:8px;margin:4px 0 0;font-size:14px}
+
+.gq{font-size:11px;font-weight:600;color:var(--amber);margin:-4px 0 8px}
+.gq.ok{color:var(--muted)}
+.mbox .gq{margin:0}
+.nochart{display:grid;place-items:center;height:100%;color:var(--muted);font-size:12.5px;text-align:center;padding:16px}
+.loading{display:flex;align-items:center;gap:14px;padding:22px}
+.loading .sub{color:var(--muted);font-size:12.5px;margin-top:2px}
+.spin{width:28px;height:28px;border-radius:50%;border:3px solid var(--line2);border-top-color:var(--accent);animation:sp 0.9s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body>
+<div class="app" id="app">
+  <header class="topbar">
+    <button class="iconbtn" id="menuBtn" aria-label="Minimizar menú"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    <div class="brand"><span class="mark"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a8 8 0 0 0-8 8c0 5.4 8 12 8 12s8-6.6 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg></span><span>Omega<b>.</b>TRC</span></div>
+    <div class="spacer"></div>
+    <span class="where">Vialidad y Movilidad Urbana · Torreón 2023</span>
+    <button class="iconbtn" id="themeBtn" aria-label="Cambiar tema"></button>
+  </header>
+  <nav class="mnav" id="mnav" aria-label="Módulos"></nav>
+  <div class="shell">
+    <aside class="side" id="side" aria-label="Módulos">
+      <button class="minbtn" id="minBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 3v18M15 9l-3 3 3 3"/></svg><span>Minimizar</span></button>
+      <div id="navList" style="display:grid;gap:10px"></div>
+      <div class="foot">
+        <div><strong>Fuente:</strong> omega 2023.xlsx · 6 hojas operativas</div>
+        <div><strong>Uso directivo.</strong> Contiene datos personales: comparte solo con personal autorizado.</div>
+        <div>Red vial © colaboradores de OpenStreetMap.</div>
+      </div>
+    </aside>
+    <main id="main"><section class="card loading" id="loading"><div class="spin"></div><div><b>Cargando datos operativos…</b><div class="sub" id="loadTxt">Descargando bases y red vial</div></div></section></main>
+  </div>
+</div>
+<div class="pop" id="pop" hidden></div>
+<div class="toast" id="toast" hidden></div>
+<div class="modal" id="modal" hidden></div>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
+<script>
+window.__omegaApp=function(RAW_TEXT,ROADS_TEXT){
+'use strict';
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=n=>Math.round(n).toLocaleString('es-MX');
+const pct=(a,b,d=1)=>b?(a/b*100).toLocaleString('es-MX',{maximumFractionDigits:d,minimumFractionDigits:0})+'%':'—';
+const title=s=>s==='SIN DATO'?'Sin dato':String(s).toLowerCase().replace(/(^|[\s(\/-])([a-záéíóúñü])/g,(m,a,b)=>a+b.toUpperCase());
+
+/* ---------- Iconos */
+const IP={
+ grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+ crash:'<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
+ cone:'<path d="M9.3 6 12 2l2.7 4M7.5 12h9M6 17h12M4 21h16M9.3 6h5.4L18 21H6z"/>',
+ book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M8 7h8M8 11h6"/>',
+ tow:'<path d="M3 17h2m4 0h6m4 0h2V12l-3-5h-5v10"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M14 7V4L4 11"/>',
+ park:'<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/>',
+ shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>',
+ cal:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+ pin:'<path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+ tag:'<path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
+ radio:'<circle cx="12" cy="12" r="2"/><path d="M16.2 7.8a6 6 0 0 1 0 8.4M7.8 16.2a6 6 0 0 1 0-8.4M19.1 4.9a10 10 0 0 1 0 14.2M4.9 19.1a10 10 0 0 1 0-14.2"/>',
+ users:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
+ clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ trend:'<path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/>',
+ chart:'<path d="M3 3v18h18"/><path d="M7 15v3M11 10v8M15 12v6M19 6v12"/>',
+ map:'<path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3z"/><path d="M9 3v15M15 6v15"/>',
+ table:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>',
+ pie:'<path d="M21.2 15.9A10 10 0 1 1 8 2.8"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
+ x:'<path d="M18 6 6 18M6 6l12 12"/>',
+ down:'<path d="m6 9 6 6 6-6"/>',
+ sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+ moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+ copy:'<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+ layers:'<path d="m12 2 10 5-10 5L2 7z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/>',
+ filter:'<path d="M22 3H2l8 9.5V19l4 2v-8.5z"/>'
+};
+const ic=(n,s=16)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IP[n]||''}</svg>`;
+
+/* ---------- Datos */
+const RAW=JSON.parse(RAW_TEXT);
+const MESES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const DOWS=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+const HORAS=[...Array(24)].map((_,i)=>String(i).padStart(2,'0')+'h').concat(['SIN DATO']);
+const DAY0=Date.UTC(2023,0,1);
+const dDate=i=>new Date(DAY0+i*864e5);
+const dIso=i=>dDate(i).toISOString().slice(0,10);
+const dLong=i=>{const d=dDate(i);return `${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')}/2023`};
+const dShort=i=>{const d=dDate(i);return `${d.getUTCDate()} ${MESES[d.getUTCMonth()]}`};
+const MONTH_OF=new Int8Array(365),DOW_OF=new Int8Array(365),MSTART=[];
+for(let i=0;i<365;i++){const d=dDate(i);MONTH_OF[i]=d.getUTCMonth();DOW_OF[i]=(d.getUTCDay()+6)%7;if(d.getUTCDate()===1)MSTART.push(i)}
+const DS={};
+const ACCP=RAW.accp;delete RAW.accp;
+for(const [k,r] of Object.entries(RAW)){
+  const ds={key:k,n:r.n,dims:{},vals:r.vals,txt:r.txt||{}};
+  for(const [d,o] of Object.entries(r.dims)) ds.dims[d]={dict:o.dict,c:Int16Array.from(o.c)};
+  ds.fecha=Int16Array.from(r.vals.fecha);
+  ds.dims.mes={dict:MESES,c:Int16Array.from(ds.fecha,x=>MONTH_OF[Math.max(0,x)]),fixed:true};
+  ds.dims.dow={dict:DOWS,c:Int16Array.from(ds.fecha,x=>DOW_OF[Math.max(0,x)]),fixed:true};
+  if(r.vals.hora) ds.dims.hora={dict:HORAS,c:Int16Array.from(r.vals.hora,h=>h<0?24:h),fixed:true};
+  // índice de color estable por entidad (orden de frecuencia global, "Sin dato" siempre gris)
+  for(const dm of Object.values(ds.dims)){let j=0;dm.col=dm.dict.map(v=>v==='SIN DATO'||v==='OTROS'?-1:j++)}
+  if(r.vals.lat){ds.geo=r.vals.lat.map(v=>v!=null).reduce((a,b)=>a+(b?1:0),0)}
+  DS[k]=ds;
+}
+const ORDER={
+  edad:['10-17','18-24','25-34','35-44','45-54','55-64','65+','SIN DATO'],
+  etilico:['<0.40','0.40-0.79','0.80-1.49','≥1.50','OVER (>LÍMITE)','SIN DATO'],
+  modelo:['ANTES 2000','2000-2009','2010-2014','2015-2019','2020-2024','SIN DATO'],
+  mes:MESES,dow:DOWS,hora:HORAS
+};
+/* participantes de accidentes agrupados por accidente */
+const PBY=Array.from({length:DS.acc.n},()=>[]);ACCP.acc.forEach((a,j)=>PBY[a].push(j));
+const PV=(j,f)=>{const t=ACCP.txt[f];return t.dict[t.c[j]]};
+const FL={
+ acc:{fecha:'Fecha',hm:'Hora',ubicacion:'Ubicación',colonia_full:'Colonia',sector:'Sector',jurisdiccion:'Jurisdicción',origen:'Origen',grupo:'Grupo',unidades:'Unidad(es)',agentes:'Agente(s)',operador:'Operador en turno',tipo:'Tipo de accidente',danos:'Daños',causa:'Causa',estatus:'Estatus',motivo:'Motivo no atendido',les:'Lesionados',fal:'Fallecidos',lesM:'Lesionados H',lesF:'Lesionados M',falM:'Fallecidos H',falF:'Fallecidos M',nveh:'Vehículos',p_nombres:'Involucrados',p_placas:'Placas',p_tels:'Teléfonos',razonamiento:'Razonamiento'},
+ eve:{fecha:'Fecha',hm:'Hora',domicilio:'Domicilio',sector:'Sector',dependencia:'Dependencia',accion:'Acción',grupo:'Grupo',unidades:'Unidades',agentes:'Agente(s)',origen:'Origen',operador:'Operador',razonamiento:'Razonamiento'},
+ bit:{fecha:'Fecha',hm:'Hora',unidad:'Unidad',grupo:'Grupo',domicilio:'Domicilio',clave:'Clave',operador:'Operador',razonamiento:'Razonamiento'},
+ cor:{fecha:'Fecha',domicilio:'Domicilio de la infracción',tipo:'Tipo',marca_full:'Marca',submarca:'Submarca',anio:'Año',color:'Color',placas:'Placas',serie:'Serie',infraccion:'Infracción',numeral:'Numeral',inventario:'Inventario',agentes:'Agente(s)',unidad:'Unidad',grua_full:'Grúa',observaciones:'Observaciones (folio 911 y hora)',operador:'Operador'},
+ mal:{fecha:'Fecha',hm:'Hora',domicilio:'Domicilio',colonia_full:'Colonia',sector:'Sector',evento:'Evento',unidades:'Unidad(es)',agentes:'Agente(s)',grupo:'Grupo',estatus:'Estatus',motivo:'Motivo no atendido',origen:'Origen',operador:'Operador en turno',razonamiento:'Razonamiento'},
+ det:{fecha:'Fecha',hm:'Hora remisión',nombre:'Nombre del conductor',direccion:'Dirección del conductor',edad_n:'Edad',ingreso:'Tipo de ingreso',grado:'Grado etílico',folio911:'Folio 911',remision:'N° de remisión',ubicacion:'Ubicación del vehículo',tipo:'Tipo',marca_full:'Marca',submarca:'Submarca',anio:'Año',color:'Color',placas:'Placas',serie:'Serie',infraccion:'Infracción',numerales:'Numerales',inventario:'Inventario',agentes:'Agente',unidad:'Unidad',grua_full:'Grúa',autoridad:'Autoridad',rnd:'Registro Nacional de Detenidos',operador:'Operador en turno'}
+};
+const PFL={n:'#',nombre:'Nombre',sexo:'Sexo',edad:'Edad',tel:'Teléfono',domicilio:'Domicilio',servicio:'Servicio',tiposerv:'Tipo de servicio',clasif:'Clasificación',marca:'Marca',modelo:'Modelo',placas:'Placas',color:'Color'};
+function F(k,key,i){
+  const ds=DS[k];
+  if(key==='fecha')return dLong(ds.fecha[i]);
+  if(k==='acc'&&key.startsWith('p_')){const f={p_nombres:'nombre',p_placas:'placas',p_tels:'tel'}[key];return PBY[i].map(j=>PV(j,f)).filter(Boolean).join(' / ')}
+  if(ds.txt[key]){const t=ds.txt[key];return t.dict[t.c[i]]}
+  if(ds.dims[key]){const dm=ds.dims[key];const v=dm.dict[dm.c[i]];return v==='SIN DATO'?'':v}
+  if(ds.vals[key])return ds.vals[key][i];
+  return '';
+}
+const hasGeo=(k,i)=>DS[k].vals.lat&&DS[k].vals.lat[i]!=null;
+/* búsqueda de texto libre */
+const norm=s=>String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+const HAY={};
+function hay(k){
+  if(HAY[k])return HAY[k];const ds=DS[k];
+  const parts=[...Object.values(ds.txt).map(t=>[t.c,t.dict.map(norm)]),...Object.values(ds.dims).filter(d=>!d.fixed).map(d=>[d.c,d.dict.map(v=>v==='SIN DATO'?'':norm(v))])];
+  const pn=k==='acc'?Object.values(ACCP.txt).map(t=>[t.c,t.dict.map(norm)]):null;
+  const out=new Array(ds.n);
+  for(let i=0;i<ds.n;i++){let s=dLong(ds.fecha[i]);for(const [c,d] of parts)s+='|'+d[c[i]];if(pn)for(const j of PBY[i])for(const [c,d] of pn)s+='|'+d[c[j]];out[i]=s}
+  HAY[k]=out;return out;
+}
+function searchMask(k,q){
+  const toks=norm(q).split(/\s+/).filter(Boolean);if(!toks.length)return null;
+  const h=hay(k),m=new Uint8Array(h.length);for(let i=0;i<h.length;i++){const s=h[i];let ok=1;for(const t of toks)if(!s.includes(t)){ok=0;break}m[i]=ok}return m;
+}
+const LBL={sector:'Sector',jurisdiccion:'Jurisdicción',origen:'Origen',grupo:'Grupo',tipo:'Tipo',danos:'Daños',causa:'Causa',motivo:'Motivo no atendido',estatus:'Estatus',colonia:'Colonia',vehiculo:'Vehículo',servicio:'Servicio',sexo:'Sexo conductor',edad:'Edad',mes:'Mes',dow:'Día',hora:'Hora',dependencia:'Dependencia',accion:'Acción',unidad:'Unidad',clave:'Clave / razonamiento',marca:'Marca',modelo:'Modelo (año)',grua:'Grúa',evento:'Evento',etilico:'Grado etílico',autoridad:'Autoridad'};
+
+/* ---------- Módulos */
+const MODS={
+ general:{title:'Panel general',sub:'Vista integral del año',icon:'grid',tone:'var(--accent)'},
+ geo:{title:'Mapa georreferenciado',sub:'Eventos ubicados en la ciudad',icon:'map',tone:'var(--accent)'},
+ acc:{title:'Accidentes viales',sub:'Choques, lesionados y fallecidos',icon:'crash',tone:'var(--rose)',noun:'reportes',
+   h1:['Accidentes',' viales'],desc:'Reportes de hechos de tránsito con su atención, severidad y ubicación.',
+   metrics:[['count','Reportes'],['les','Lesionados'],['fal','Fallecidos'],['nveh','Vehículos']],
+   groups:[['Territorio','pin',['sector','colonia','jurisdiccion']],['Hecho vial','crash',['tipo','causa','danos']],['Operación','radio',['origen','grupo','estatus','motivo']],['Participantes','users',['vehiculo','servicio','sexo','edad']],['Tiempo','clock',['mes','dow','hora']]],
+   kpis:c=>[
+     {l:'Reportes',v:fmt(c.idx.length),s:fmt(c.idx.length/c.days)+' por día'},
+     {l:'Atendidos',v:pct(c.share('estatus','ATENDIDO'),c.idx.length),meter:c.share('estatus','ATENDIDO')/(c.idx.length||1),s:fmt(c.share('estatus','ATENDIDO'))+' con intervención',tone:'accent'},
+     {l:'Lesionados',v:fmt(c.sum('les')),s:fmt(c.sum('lesM'))+' hombres · '+fmt(c.sum('lesF'))+' mujeres',tone:'amber'},
+     {l:'Fallecidos',v:fmt(c.sum('fal')),s:fmt(c.sum('falM'))+' hombres · '+fmt(c.sum('falF'))+' mujeres',tone:'rose'},
+     {l:'Causa principal',v:title(c.top('causa',['SIN DATO','CORTE CIRCULACION'])),sm:1,s:'Excluye cortes de circulación'}],
+   charts:[
+     {t:'trend',span:8,title:'Tendencia de accidentes',sub:'Clic en un mes para filtrar'},
+     {t:'donut',dim:'tipo',span:4,title:'Tipo de accidente'},
+     {t:'heat',span:6,title:'Día y hora',sub:'Concentración semanal · clic en una celda para filtrar'},
+     {t:'hbar',dim:'causa',top:12,span:6,title:'Causas'},
+     {t:'bar',dim:'sector',span:4,title:'Sectores'},
+     {t:'donut',dim:'danos',span:4,title:'Daños'},
+     {t:'hbar',dim:'motivo',span:4,title:'Motivo de no atención',hide:['SIN DATO']},
+     {t:'map',span:8,title:'Mapa de incidencia',colorBy:['tipo','danos','estatus','jurisdiccion','sector']},
+     {t:'hbar',dim:'colonia',top:15,span:4,title:'Colonias con más reportes',hide:['SIN DATO','OTROS'],h:420},
+     {t:'hbar',dim:'grupo',span:4,title:'Grupo operativo'},
+     {t:'donut',dim:'jurisdiccion',span:4,title:'Jurisdicción'},
+     {t:'donut',dim:'origen',span:4,title:'Origen del reporte'},
+     {t:'bar',dim:'vehiculo',span:4,title:'Vehículo principal',hide:['SIN DATO']},
+     {t:'bar',dim:'edad',span:4,title:'Edad del conductor',hide:['SIN DATO']},
+     {t:'donut',dim:'sexo',span:4,title:'Sexo del conductor'},
+     {t:'pivot',span:12,title:'Tabla cruzada',rows:'sector',cols:'tipo'},
+     {t:'table',span:12,title:'Registro detallado de accidentes',cols:['fecha','hm','ubicacion','colonia_full','sector','tipo','causa','danos','estatus','les','fal','p_nombres','p_placas','p_tels','unidades','agentes']},
+     {t:'people',span:12,title:'Personas y vehículos involucrados'}
+   ]},
+ eve:{title:'Eventos y apoyos',sub:'Puntos fijos, obras y apoyos',icon:'cone',tone:'var(--accent2)',noun:'registros',
+   h1:['Eventos',' y apoyos'],desc:'Servicios de vialidad: puntos fijos, escuelas, obras, semáforos y apoyos a dependencias.',
+   metrics:[['count','Registros']],
+   groups:[['Territorio','pin',['sector']],['Servicio','tag',['accion','dependencia']],['Operación','radio',['origen','grupo']],['Tiempo','clock',['mes','dow','hora']]],
+   kpis:c=>[
+     {l:'Registros',v:fmt(c.idx.length),s:fmt(c.idx.length/c.days)+' por día'},
+     {l:'Puntos fijos',v:pct(c.shareAny('accion',v=>v.startsWith('PUNTOS FIJOS')),c.idx.length),meter:c.shareAny('accion',v=>v.startsWith('PUNTOS FIJOS'))/(c.idx.length||1),s:'Incluye escuelas',tone:'accent'},
+     {l:'Apoyo a otras dependencias',v:pct(c.idx.length-c.share('dependencia','VIALIDAD'),c.idx.length),s:fmt(c.idx.length-c.share('dependencia','VIALIDAD'))+' registros'},
+     {l:'Acción principal',v:title(c.top('accion')),sm:1},
+     {l:'Sector con más carga',v:c.top('sector'),sm:1}],
+   charts:[
+     {t:'trend',span:8,title:'Tendencia de eventos',sub:'Clic en un mes para filtrar'},
+     {t:'donut',dim:'origen',span:4,title:'Origen'},
+     {t:'hbar',dim:'accion',top:15,span:6,title:'Acciones',h:400},
+     {t:'hbar',dim:'dependencia',top:15,span:6,title:'Dependencia apoyada',h:400},
+     {t:'heat',span:6,title:'Día y hora',sub:'Clic en una celda para filtrar'},
+     {t:'bar',dim:'sector',span:6,title:'Sectores'},
+     {t:'map',span:8,title:'Mapa de eventos y apoyos',colorBy:['accion','dependencia','origen','sector'],h:460},
+     {t:'hbar',dim:'grupo',span:4,title:'Grupo operativo',h:460},
+     {t:'pivot',span:12,title:'Tabla cruzada',rows:'accion',cols:'sector'},
+     {t:'table',span:12,title:'Registro detallado',cols:['fecha','hm','domicilio','sector','accion','dependencia','grupo','unidades','agentes','origen','razonamiento']}
+   ]},
+ bit:{title:'Bitácora',sub:'Actividad de unidades',icon:'book',tone:'var(--amber)',noun:'registros',
+   h1:['Bitácora',' de unidades'],desc:'Movimientos y claves reportadas por las unidades a lo largo del año.',
+   metrics:[['count','Registros']],
+   groups:[['Unidades','radio',['unidad','grupo']],['Clave','tag',['clave']],['Tiempo','clock',['mes','dow','hora']]],
+   kpis:c=>[
+     {l:'Registros',v:fmt(c.idx.length),s:fmt(c.idx.length/c.days)+' por día'},
+     {l:'Unidades activas',v:fmt(c.distinct('unidad')),s:'Con al menos un registro'},
+     {l:'Operativo carrusel',v:pct(c.share('clave','OPERATIVO CARRUSEL'),c.idx.length),meter:c.share('clave','OPERATIVO CARRUSEL')/(c.idx.length||1),tone:'accent'},
+     {l:'Unidad más activa',v:c.top('unidad'),sm:1},
+     {l:'Grupo más activo',v:title(c.top('grupo')),sm:1}],
+   charts:[
+     {t:'trend',span:8,title:'Tendencia de bitácora',sub:'Clic en un mes para filtrar'},
+     {t:'donut',dim:'grupo',span:4,title:'Grupo'},
+     {t:'hbar',dim:'unidad',top:20,span:6,title:'Unidades con más registros',h:460},
+     {t:'hbar',dim:'clave',span:6,title:'Claves / razonamiento',h:460},
+     {t:'map',span:7,title:'Mapa de la bitácora',colorBy:['clave','grupo'],h:440},
+     {t:'heat',span:5,title:'Día y hora',sub:'Clic en una celda para filtrar',h:440},
+     {t:'pivot',span:12,title:'Tabla cruzada',rows:'unidad',cols:'mes'},
+     {t:'table',span:12,title:'Registro detallado',cols:['fecha','hm','unidad','grupo','domicilio','clave','razonamiento','operador']}
+   ]},
+ cor:{title:'Vehículos al corralón',sub:'Remisiones y grúas',icon:'tow',tone:'var(--c5)',noun:'vehículos',
+   h1:['Vehículos',' al corralón'],desc:'Unidades remitidas al corralón por tipo, marca, antigüedad y grúa.',
+   metrics:[['count','Vehículos']],
+   groups:[['Vehículo','tow',['tipo','marca','modelo']],['Servicio','radio',['grua']],['Tiempo','clock',['mes','dow']]],
+   kpis:c=>[
+     {l:'Vehículos remitidos',v:fmt(c.idx.length),s:fmt(c.idx.length/c.days)+' por día'},
+     {l:'Motocicletas',v:pct(c.share('tipo','MOTO'),c.idx.length),meter:c.share('tipo','MOTO')/(c.idx.length||1),s:fmt(c.share('tipo','MOTO'))+' unidades',tone:'accent'},
+     {l:'Marca principal',v:title(c.top('marca')),sm:1},
+     {l:'Modelo 2015 o más reciente',v:pct(c.share('modelo','2015-2019')+c.share('modelo','2020-2024'),c.idx.length-c.share('modelo','SIN DATO')),s:'Sobre vehículos con año registrado'},
+     {l:'Grúa con más servicios',v:title(c.top('grua')),sm:1}],
+   charts:[
+     {t:'trend',span:8,title:'Tendencia de remisiones',sub:'Clic en un mes para filtrar'},
+     {t:'donut',dim:'tipo',span:4,title:'Tipo de vehículo'},
+     {t:'hbar',dim:'marca',top:15,span:6,title:'Marcas',h:400,hide:['OTROS','SIN DATO']},
+     {t:'bar',dim:'modelo',span:6,title:'Antigüedad del vehículo',h:400},
+     {t:'map',span:8,title:'Ubicación de las remisiones',colorBy:['tipo','grua','modelo']},
+     {t:'donut',dim:'grua',span:4,title:'Grúa',h:420},
+     {t:'bar',dim:'dow',span:12,title:'Remisiones por día de la semana'},
+     {t:'pivot',span:12,title:'Tabla cruzada',rows:'marca',cols:'mes'},
+     {t:'table',span:12,title:'Registro detallado',cols:['fecha','domicilio','tipo','marca_full','submarca','anio','color','placas','serie','infraccion','numeral','inventario','grua_full','agentes','observaciones']}
+   ]},
+ mal:{title:'Mal estacionados',sub:'Infracciones de estacionamiento',icon:'park',tone:'var(--c6)',noun:'reportes',
+   h1:['Vehículos',' mal estacionados'],desc:'Reportes de estacionamiento indebido, abandono, exceso de velocidad y su atención.',
+   metrics:[['count','Reportes']],
+   groups:[['Territorio','pin',['sector','colonia']],['Evento','park',['evento']],['Operación','radio',['origen','grupo','estatus','motivo']],['Tiempo','clock',['mes','dow','hora']]],
+   kpis:c=>[
+     {l:'Reportes',v:fmt(c.idx.length),s:fmt(c.idx.length/c.days)+' por día'},
+     {l:'Atendidos',v:pct(c.share('estatus','ATENDIDO'),c.idx.length),meter:c.share('estatus','ATENDIDO')/(c.idx.length||1),tone:'accent'},
+     {l:'Pendiente de otro folio',v:fmt(c.share('motivo','PENDIENTE OTRO FOLIO')),tone:'amber'},
+     {l:'Evento principal',v:title(c.top('evento')),sm:1},
+     {l:'Colonia principal',v:title(c.top('colonia',['SIN DATO','OTROS'])),sm:1}],
+   charts:[
+     {t:'trend',span:8,title:'Tendencia de reportes',sub:'Clic en un mes para filtrar'},
+     {t:'donut',dim:'evento',span:4,title:'Tipo de evento'},
+     {t:'heat',span:6,title:'Día y hora',sub:'Clic en una celda para filtrar'},
+     {t:'bar',dim:'sector',span:6,title:'Sectores'},
+     {t:'map',span:8,title:'Mapa de reportes',colorBy:['evento','estatus','sector']},
+     {t:'hbar',dim:'colonia',top:15,span:4,title:'Colonias con más reportes',hide:['SIN DATO','OTROS'],h:420},
+     {t:'hbar',dim:'grupo',span:4,title:'Grupo operativo'},
+     {t:'hbar',dim:'motivo',span:4,title:'Motivo de no atención',hide:['SIN DATO']},
+     {t:'donut',dim:'origen',span:4,title:'Origen'},
+     {t:'pivot',span:12,title:'Tabla cruzada',rows:'evento',cols:'sector'},
+     {t:'table',span:12,title:'Registro detallado',cols:['fecha','hm','domicilio','colonia_full','sector','evento','estatus','motivo','unidades','agentes','razonamiento']}
+   ]},
+ det:{title:'Detenidos',sub:'Remisiones por alcoholemia',icon:'shield',tone:'var(--c4)',noun:'detenidos',
+   h1:['Conductores',' detenidos'],desc:'Remisiones al juez calificador o ministerio público, con grado etílico y vehículo.',
+   metrics:[['count','Detenidos']],
+   groups:[['Persona','users',['edad','etilico']],['Vehículo','tow',['tipo','marca','grua']],['Autoridad','shield',['autoridad']],['Tiempo','clock',['mes','dow','hora']]],
+   kpis:c=>[
+     {l:'Detenidos',v:fmt(c.idx.length),s:fmt(c.idx.length/c.days)+' por día'},
+     {l:'Grado etílico ≥ 0.80',v:pct(c.share('etilico','0.80-1.49')+c.share('etilico','≥1.50')+c.share('etilico','OVER (>LÍMITE)'),c.idx.length-c.share('etilico','SIN DATO')),s:'Sobre detenidos con medición',tone:'rose'},
+     {l:'Juez calificador',v:pct(c.share('autoridad','JUEZ CALIFICADOR'),c.idx.length-c.share('autoridad','SIN DATO')),s:'Sobre casos con autoridad registrada'},
+     {l:'Rango de edad principal',v:c.top('edad',['SIN DATO'])+' años',sm:1},
+     {l:'Hora pico de remisión',v:c.top('hora',['SIN DATO']),sm:1}],
+   charts:[
+     {t:'trend',span:8,title:'Tendencia de detenciones',sub:'Clic en un mes para filtrar'},
+     {t:'donut',dim:'etilico',span:4,title:'Grado etílico'},
+     {t:'heat',span:6,title:'Día y hora de remisión',sub:'Clic en una celda para filtrar'},
+     {t:'bar',dim:'edad',span:6,title:'Edad',hide:['SIN DATO']},
+     {t:'hbar',dim:'marca',top:12,span:4,title:'Marca del vehículo',hide:['OTROS','SIN DATO']},
+     {t:'donut',dim:'tipo',span:4,title:'Tipo de vehículo'},
+     {t:'donut',dim:'autoridad',span:4,title:'Autoridad'},
+     {t:'map',span:8,title:'Ubicación de las detenciones',colorBy:['etilico','edad','autoridad']},
+     {t:'donut',dim:'grua',span:4,title:'Grúa',h:420},
+     {t:'pivot',span:12,title:'Tabla cruzada',rows:'edad',cols:'etilico'},
+     {t:'table',span:12,title:'Registro detallado',cols:['fecha','hm','nombre','edad_n','direccion','grado','placas','marca_full','submarca','color','ubicacion','autoridad','remision','folio911','agentes']}
+   ]}
+};
+const MOD_KEYS=Object.keys(MODS);
+
+/* ---------- Estado */
+const S={mod:'general',from:0,to:364,preset:'all',f:{},metric:{},gran:{},pivot:{},page:{},mapColor:{},mapMode:{},gLayers:null,q:{},qm:{},geoMode:'cluster'};
+for(const k of Object.keys(DS)){S.f[k]={};S.metric[k]='count';S.gran[k]='mes';S.page[k]=0}
+try{const h=location.hash.slice(1);if(MODS[h])S.mod=h;else{const m=localStorage.getItem('omega.mod');if(MODS[m])S.mod=m}}catch(e){}
+
+function getSel(k,d){return S.f[k][d]}
+function setCodes(k,d,codes){
+  if(!codes||!codes.length){delete S.f[k][d];return}
+  const a=new Uint8Array(DS[k].dims[d].dict.length);codes.forEach(c=>a[c]=1);S.f[k][d]=a;
+}
+function toggle(k,d,code,noRefresh){
+  let a=S.f[k][d];
+  if(!a){a=new Uint8Array(DS[k].dims[d].dict.length);S.f[k][d]=a}
+  a[code]^=1;if(!a.some(x=>x))delete S.f[k][d];
+  S.page[k]=0;if(!noRefresh)refresh();
+}
+function codeOf(k,d,name){return DS[k].dims[d].dict.indexOf(name)}
+
+const memo=new Map();
+function rows(k,except){
+  const key=k+'|'+(except||[]).join(',');
+  if(memo.has(key))return memo.get(key);
+  const ds=DS[k],F=S.f[k];
+  const act=Object.keys(F).filter(d=>!except||!except.includes(d)).map(d=>[ds.dims[d].c,F[d]]);
+  const out=new Int32Array(ds.n);let m=0;const fe=ds.fecha,lo=S.from,hi=S.to,na=act.length,qm=S.qm[k];
+  outer:for(let i=0;i<ds.n;i++){const t=fe[i];if(t<lo||t>hi)continue;if(qm&&!qm[i])continue;
+    for(let j=0;j<na;j++){if(!act[j][1][act[j][0][i]])continue outer}out[m++]=i}
+  const r=out.subarray(0,m);memo.set(key,r);return r;
+}
+function wOf(k,metric){return metric==='count'?null:DS[k].vals[metric]}
+function groupBy(k,d,idx,metric){
+  const dm=DS[k].dims[d],c=dm.c,w=wOf(k,metric),acc=new Float64Array(dm.dict.length);
+  if(w)for(let j=0;j<idx.length;j++){const i=idx[j];acc[c[i]]+=w[i]}else for(let j=0;j<idx.length;j++)acc[c[idx[j]]]++;
+  return acc;
+}
+function totalOf(k,idx,metric){const w=wOf(k,metric);if(!w)return idx.length;let s=0;for(let j=0;j<idx.length;j++)s+=w[idx[j]];return s}
+function ctx(k){
+  const idx=rows(k);const days=S.to-S.from+1;
+  return {idx,days,
+    sum:f=>{const w=DS[k].vals[f];let s=0;for(const i of idx)s+=w[i];return s},
+    share:(d,name)=>{const code=codeOf(k,d,name);if(code<0)return 0;const c=DS[k].dims[d].c;let s=0;for(const i of idx)if(c[i]===code)s++;return s},
+    shareAny:(d,fn)=>{const dm=DS[k].dims[d];const ok=dm.dict.map(fn);let s=0;for(const i of idx)if(ok[dm.c[i]])s++;return s},
+    distinct:d=>{const g=groupBy(k,d,idx,'count');let n=0;g.forEach((v,i)=>{if(v>0&&DS[k].dims[d].dict[i]!=='SIN DATO')n++});return n},
+    top:(d,excl=['SIN DATO'])=>{const g=groupBy(k,d,idx,'count');let b=-1,bv=0;g.forEach((v,i)=>{if(v>bv&&!excl.includes(DS[k].dims[d].dict[i])){bv=v;b=i}});return b<0?'—':DS[k].dims[d].dict[b]}
+  };
+}
+
+/* ---------- Tema */
+function tok(){
+  const s=getComputedStyle(document.documentElement),g=n=>s.getPropertyValue(n).trim();
+  return {fg:g('--fg'),muted:g('--muted'),faint:g('--faint'),line:g('--line'),line2:g('--line2'),panel:g('--panel'),panel2:g('--panel2'),
+    accent:g('--accent'),accent2:g('--accent2'),amber:g('--amber'),rose:g('--rose'),fade:g('--fade'),seq0:g('--seq0'),seq1:g('--seq1'),
+    cat:['--c1','--c2','--c3','--c4','--c5','--c6','--c7'].map(g),cx:g('--cx'),font:g('--font'),
+    dark:getComputedStyle(document.documentElement).colorScheme.includes('dark')};
+}
+let TK=null;
+function isDark(){const t=document.documentElement.dataset.theme;if(t)return t==='dark';return !matchMedia('(prefers-color-scheme: light)').matches}
+function paintThemeBtn(){$('#themeBtn').innerHTML=ic(isDark()?'sun':'moon',17)}
+$('#themeBtn').onclick=()=>{document.documentElement.dataset.theme=isDark()?'light':'dark';try{localStorage.setItem('omega.theme',document.documentElement.dataset.theme)}catch(e){};paintThemeBtn();render()};
+try{const t=localStorage.getItem('omega.theme');if(t)document.documentElement.dataset.theme=t}catch(e){}
+matchMedia('(prefers-color-scheme: light)').addEventListener('change',()=>{if(!document.documentElement.dataset.theme){paintThemeBtn();render()}});
+paintThemeBtn();
+const colorOf=(dm,code)=>{const j=dm.col[code];return j<0||j>=7?TK.cx:TK.cat[j]};
+
+/* ---------- Navegación */
+function navCount(k){return DS[k]?fmt(DS[k].n):''}
+function paintNav(){
+  $('#navList').innerHTML=MOD_KEYS.map(k=>{const m=MODS[k];return `<button class="navbtn${S.mod===k?' on':''}" data-mod="${k}" style="--tone:${m.tone}" title="${esc(m.title)}">${ic(m.icon,20)}<span class="txt"><span class="t">${esc(m.title)}</span><span class="s">${esc(m.sub)}</span></span><span class="n num">${navCount(k)}</span></button>`}).join('');
+  $('#mnav').innerHTML=MOD_KEYS.map(k=>`<button class="${S.mod===k?'on':''}" data-mod="${k}">${esc(MODS[k].title)}</button>`).join('');
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-mod]');if(b){go(b.dataset.mod)}});
+function go(k){S.mod=k;closePop();try{localStorage.setItem('omega.mod',k);history.replaceState(null,'','#'+k)}catch(e){};paintNav();render();window.scrollTo({top:0})}
+const toggleMin=()=>$('#app').classList.toggle('min');
+$('#minBtn').onclick=toggleMin;$('#menuBtn').onclick=toggleMin;
+
+/* ---------- Charts registry */
+let CH={};
+function disposeAll(){Object.values(CH).forEach(c=>{try{c.inst.dispose()}catch(e){}});CH={};LM.forEach(o=>{try{o.map.remove()}catch(e){}});LM.length=0;for(const k in MM)delete MM[k];GM=null}
+const ro=new ResizeObserver(ents=>{for(const en of ents){const id=en.target.id;const c=CH[id];if(c){c.inst.resize();if(c.onResize)c.onResize()}}});
+function mount(id,draw,onClick){
+  const el=document.getElementById(id);if(!el)return;
+  if(!window.echarts){el.innerHTML='<div class="nochart">No se pudo cargar la librería de gráficas. Recarga la página.</div>';return {inst:{setOption(){},resize(){},dispose(){},on(){}},draw}}
+  const inst=echarts.init(el,null,{renderer:'canvas'});
+  CH[id]={inst,draw};ro.observe(el);
+  if(onClick)inst.on('click',onClick);
+  return CH[id];
+}
+function base(){
+  return {textStyle:{fontFamily:TK.font,color:TK.muted},animationDuration:350,animationDurationUpdate:300,
+    tooltip:{backgroundColor:TK.panel,borderColor:TK.line2,textStyle:{color:TK.fg,fontSize:12,fontFamily:TK.font},extraCssText:'border-radius:10px;box-shadow:0 10px 30px -10px rgba(0,0,0,.5)'}};
+}
+const axisCat=(data,extra={})=>Object.assign({type:'category',data,axisLine:{lineStyle:{color:TK.line2}},axisTick:{show:false},axisLabel:{color:TK.muted,fontSize:11}},extra);
+const axisVal=(extra={})=>Object.assign({type:'value',splitLine:{lineStyle:{color:TK.line,type:[3,4]}},axisLabel:{color:TK.faint,fontSize:10.5,formatter:v=>v>=1000?(v/1000).toLocaleString('es-MX')+'k':v}},extra);
+function metricName(k){const m=(MODS[k].metrics||[]).find(x=>x[0]===S.metric[k]);return m?m[1]:'Registros'}
+
+function items(k,ch,metric){
+  const dm=DS[k].dims[ch.dim];const idx=rows(k,[ch.dim]);const g=groupBy(k,ch.dim,idx,metric);const sel=getSel(k,ch.dim);
+  let it=dm.dict.map((name,code)=>({name,code,v:g[code],on:sel?!!sel[code]:true}));
+  if(ch.hide)it=it.filter(x=>!ch.hide.includes(x.name));
+  const ord=ORDER[ch.dim];
+  if(ord)it.sort((a,b)=>ord.indexOf(a.name)-ord.indexOf(b.name));else it.sort((a,b)=>b.v-a.v);
+  if(!ord)it=it.filter(x=>x.v>0||(sel&&sel[x.code]));
+  if(ch.top)it=it.slice(0,ch.top);
+  return {it,sel,dm,total:totalOf(k,rows(k),metric)};
+}
+
+function drawBar(k,ch,horizontal){
+  const metric=S.metric[k];const {it,sel}=items(k,ch,metric);
+  const names=it.map(x=>ch.dim==='hora'||ch.dim==='mes'||ch.dim==='dow'?x.name:title(x.name));
+  const data=it.map(x=>({value:x.v,code:x.code,itemStyle:{color:x.on?(horizontal?{type:'linear',x:0,y:0,x2:1,y2:0,colorStops:[{offset:0,color:TK.accent2},{offset:1,color:TK.accent}]}:{type:'linear',x:0,y:1,x2:0,y2:0,colorStops:[{offset:0,color:TK.accent2},{offset:1,color:TK.accent}]}):TK.fade,borderRadius:horizontal?[0,4,4,0]:[4,4,0,0]}}));
+  const o=base();
+  o.tooltip.trigger='item';o.tooltip.formatter=p=>`<b>${esc(names[p.dataIndex])}</b><br>${metricName(k)}: <b>${fmt(p.value)}</b>`;
+  const lab={show:true,position:horizontal?'right':'top',color:TK.muted,fontSize:10.5,formatter:p=>p.value?fmt(p.value):''};
+  if(horizontal){
+    o.grid={left:8,right:48,top:4,bottom:4,containLabel:true};
+    o.yAxis=axisCat(names,{inverse:true,axisLabel:{color:TK.fg,fontSize:11,width:150,overflow:'truncate'}});
+    o.xAxis=axisVal({splitLine:{show:false},axisLabel:{show:false}});
+  }else{
+    o.grid={left:8,right:8,top:22,bottom:4,containLabel:true};
+    o.xAxis=axisCat(names,{axisLabel:{color:TK.muted,fontSize:11,interval:0,rotate:names.length>8?35:0,width:90,overflow:'truncate'}});
+    o.yAxis=axisVal({max:v=>Math.ceil(v.max*1.12)||1});
+  }
+  o.series=[{type:'bar',data,barMaxWidth:horizontal?16:36,barCategoryGap:'28%',label:lab,cursor:'pointer',emphasis:{itemStyle:{color:TK.accent}}}];
+  return o;
+}
+function drawDonut(k,ch){
+  const metric=S.metric[k];const {it,dm,sel}=items(k,ch,metric);
+  const sorted=[...it].sort((a,b)=>b.v-a.v);
+  const main=[],rest={name:'Otros / sin dato',v:0,code:-1,on:true};
+  sorted.forEach(x=>{const j=dm.col[x.code];if(main.length<7&&j>=0&&j<7&&x.v>0)main.push(x);else rest.v+=x.v});
+  const parts=main.concat(rest.v>0?[rest]:[]);const tot=parts.reduce((a,b)=>a+b.v,0);
+  const o=base();
+  o.tooltip.trigger='item';o.tooltip.formatter=p=>`<b>${esc(p.name)}</b><br>${metricName(k)}: <b>${fmt(p.value)}</b> · ${pct(p.value,tot)}`;
+  o.legend={type:'plain',orient:'horizontal',left:'center',bottom:0,itemGap:10,itemWidth:10,itemHeight:10,icon:'roundRect',textStyle:{color:TK.fg,fontSize:11},
+    formatter:n=>{const p=parts.find(x=>(x.code<0?'Otros / sin dato':title(x.name))===n);return `${n.length>20?n.slice(0,19)+'…':n} ${p?pct(p.v,tot,0):''}`},selectedMode:false};
+  o.title={text:fmt(tot),subtext:metricName(k).toLowerCase(),left:'center',top:'30%',textAlign:'center',textStyle:{color:TK.fg,fontSize:20,fontWeight:800,fontFamily:TK.font},subtextStyle:{color:TK.muted,fontSize:11},itemGap:2};
+  o.series=[{type:'pie',radius:['40%','58%'],center:['50%','38%'],avoidLabelOverlap:true,label:{show:false},padAngle:1.2,itemStyle:{borderRadius:4,borderColor:TK.panel,borderWidth:2},cursor:'pointer',
+    data:parts.map(x=>({name:x.code<0?'Otros / sin dato':title(x.name),value:x.v,code:x.code,itemStyle:{color:x.code<0?TK.cx:colorOf(dm,x.code),opacity:x.on?1:.25}}))}];
+  return o;
+}
+function weekOf(day){return Math.floor((day+6)/7)} // semanas desde el 1 de enero (domingo)
+function drawTrend(k,ch){
+  const metric=S.metric[k];const gran=S.gran[k];const o=base();o.tooltip.trigger='axis';o.tooltip.axisPointer={type:'line',lineStyle:{color:TK.line2}};
+  o.grid={left:8,right:14,top:22,bottom:4,containLabel:true};
+  if(gran==='mes'){
+    const idx=rows(k,['mes']);const g=groupBy(k,'mes',idx,metric);const sel=getSel(k,'mes');
+    o.xAxis=axisCat(MESES);o.yAxis=axisVal({max:v=>Math.ceil(v.max*1.12)||1});
+    o.tooltip.formatter=ps=>`<b>${MESES[ps[0].dataIndex]} 2023</b><br>${metricName(k)}: <b>${fmt(ps[0].value)}</b>`;
+    o.series=[{type:'bar',barMaxWidth:38,cursor:'pointer',label:{show:true,position:'top',color:TK.muted,fontSize:10.5,formatter:p=>p.value?fmt(p.value):''},
+      data:Array.from(g,(v,i)=>({value:v,itemStyle:{borderRadius:[4,4,0,0],color:(!sel||sel[i])?{type:'linear',x:0,y:1,x2:0,y2:0,colorStops:[{offset:0,color:TK.accent2},{offset:1,color:TK.accent}]}:TK.fade}}))}];
+  }else{
+    const idx=rows(k);const w=wOf(k,metric);const fe=DS[k].fecha;
+    const nb=gran==='dia'?365:weekOf(364)+1;const acc=new Float64Array(nb);
+    for(const i of idx){const b=gran==='dia'?fe[i]:weekOf(fe[i]);acc[b]+=w?w[i]:1}
+    let lo=gran==='dia'?S.from:weekOf(S.from),hi=gran==='dia'?S.to:weekOf(S.to);
+    const labels=[],vals=[];
+    for(let b=lo;b<=hi;b++){const day=gran==='dia'?b:Math.max(0,b*7-6);labels.push(gran==='dia'?dShort(b):'Sem '+(b+1)+' · '+dShort(Math.max(S.from,day)));vals.push(acc[b])}
+    // promedio móvil 7 días para la vista diaria
+    let mv=null;if(gran==='dia'){mv=vals.map((_,i)=>{let s=0,n=0;for(let j=Math.max(0,i-6);j<=i;j++){s+=vals[j];n++}return +(s/n).toFixed(1)})}
+    o.xAxis=axisCat(labels,{boundaryGap:false,axisLabel:{color:TK.muted,fontSize:10.5,hideOverlap:true}});o.yAxis=axisVal();
+    o.tooltip.valueFormatter=v=>fmt(v);
+    o.legend={show:!!mv,top:0,right:0,textStyle:{color:TK.muted,fontSize:11},itemWidth:14,itemHeight:2};
+    o.series=[{name:metricName(k),type:'line',data:vals,showSymbol:false,smooth:.25,lineStyle:{width:mv?1:2,color:mv?TK.line2:TK.accent},itemStyle:{color:mv?TK.faint:TK.accent},
+      areaStyle:mv?undefined:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:TK.accent+'55'},{offset:1,color:TK.accent+'00'}]}}}];
+    if(mv)o.series.push({name:'Promedio móvil 7 días',type:'line',data:mv,showSymbol:false,smooth:.3,lineStyle:{width:2,color:TK.accent},itemStyle:{color:TK.accent},
+      areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:TK.accent+'44'},{offset:1,color:TK.accent+'00'}]}}});
+    o.dataZoom=[{type:'inside'}];
+  }
+  return o;
+}
+function drawHeat(k,ch){
+  const metric=S.metric[k];const idx=rows(k,['dow','hora']);const w=wOf(k,metric);
+  const dw=DS[k].dims.dow.c,hr=DS[k].dims.hora.c;const m=new Float64Array(7*24);
+  for(const i of idx){if(hr[i]<24)m[dw[i]*24+hr[i]]+=w?w[i]:1}
+  const sd=getSel(k,'dow'),sh=getSel(k,'hora');
+  const data=[];let mx=0;for(let d=0;d<7;d++)for(let h=0;h<24;h++){const v=m[d*24+h];mx=Math.max(mx,v);
+    const on=(!sd||sd[d])&&(!sh||sh[h]);data.push({value:[h,d,v],itemStyle:on?undefined:{opacity:.25}})}
+  const o=base();o.grid={left:8,right:8,top:6,bottom:36,containLabel:true};
+  o.tooltip.formatter=p=>`<b>${DOWS[p.value[1]]} · ${HORAS[p.value[0]]}</b><br>${metricName(k)}: <b>${fmt(p.value[2])}</b>`;
+  o.xAxis=axisCat(HORAS.slice(0,24).map(h=>h.replace('h','')),{splitArea:{show:false},axisLabel:{color:TK.muted,fontSize:10,interval:1}});
+  o.yAxis=axisCat(DOWS,{inverse:true});
+  o.visualMap={min:0,max:mx||1,calculable:false,orient:'horizontal',left:'center',bottom:0,itemHeight:120,itemWidth:10,text:['Más','Menos'],textStyle:{color:TK.muted,fontSize:10.5},inRange:{color:[TK.seq0,TK.seq1]}};
+  o.series=[{type:'heatmap',data,cursor:'pointer',itemStyle:{borderColor:TK.panel,borderWidth:2,borderRadius:3},emphasis:{itemStyle:{borderColor:TK.fg,borderWidth:1}}}];
+  return o;
+}
+/* ---------- Render */
+function chartCard(k,ch,i){
+  const id=`c_${k}_${i}`;const h=ch.h||(ch.t==='map'?420:ch.t==='heat'?300:ch.t==='trend'?300:ch.t==='hbar'?Math.max(260,Math.min(480,(ch.top||10)*26+20)):ch.t==='donut'?340:280);
+  let tools='';const icn={trend:'trend',donut:'pie',hbar:'chart',bar:'chart',heat:'cal',map:'map',pivot:'layers',table:'table',people:'users'}[ch.t];
+  if(ch.t==='trend')tools=`<div class="minis" role="group" aria-label="Granularidad">${[['mes','Mensual'],['semana','Semanal'],['dia','Diario']].map(([v,l])=>`<button data-gran="${v}" class="${S.gran[k]===v?'on':''}">${l}</button>`).join('')}</div>`;
+  if(ch.t==='map'){const cur=S.mapColor[k]||ch.colorBy[0];const md=S.mapMode[k]||'cluster';tools=`<div class="minis">${MAPMODES.map(([v,l])=>`<button data-mapmode="${v}" class="${md===v?'on':''}">${l}</button>`).join('')}</div><select id="mapcolor_${k}" aria-label="Color por" ${md==='heat'?'disabled':''}>${ch.colorBy.map(d=>`<option value="${d}" ${d===cur?'selected':''}>Color: ${LBL[d]}</option>`).join('')}</select>`}
+  if(ch.t==='pivot'){const pv=S.pivot[k]||{r:ch.rows,c:ch.cols};const opts=v=>pivotDims(k).map(d=>`<option value="${d}" ${d===v?'selected':''}>${LBL[d]}</option>`).join('');
+    tools=`<select id="pvr_${k}" aria-label="Filas">${opts(pv.r)}</select><span class="hint">×</span><select id="pvc_${k}" aria-label="Columnas">${opts(pv.c)}</select>`}
+  const sub=ch.sub||(ch.t==='hbar'||ch.t==='bar'||ch.t==='donut'?'Clic para filtrar':ch.t==='pivot'?'Clic en una celda para filtrar ambas dimensiones':ch.t==='table'?'Registros que cumplen los filtros · escribe en la fila de filtros de cada columna · clic en una fila para ver la ficha':ch.t==='people'?'Conductores y vehículos de los accidentes filtrados · busca por nombre, placa o teléfono':ch.t==='map'?'Clic en un punto para ver la ficha · clic en la leyenda para filtrar':'');
+  const body=ch.t==='pivot'?`<div class="tw" id="${id}"></div>`:(ch.t==='table'||ch.t==='people')?`<div id="${id}"></div>`:ch.t==='map'?`<div class="mlegend" id="${id}_lg"></div><div class="lmap" id="${id}" style="height:${h}px"></div>`:`<div class="ch" id="${id}" style="height:${h}px"></div>`;
+  return `<section class="card cc s${ch.span}" data-ci="${i}"><div class="hd"><div><h3>${ic(icn,16)}${esc(ch.title)}</h3><div class="sub">${esc(sub)}</div></div><div class="tools">${tools}</div></div>${body}</section>`;
+}
+function pivotDims(k){const g=MODS[k].groups.flatMap(x=>x[2]);return g}
+
+function heroHTML(k){
+  const m=MODS[k];
+  return `<section class="card hero"><div><span class="datepill">${ic('cal',13)} <span id="rangeTxt"></span></span><h1>${esc(m.h1[0])}<em>${esc(m.h1[1])}</em></h1><p>${esc(m.desc)}</p></div>
+  <div class="herostat"><svg class="spark" id="spark" viewBox="0 0 220 52" preserveAspectRatio="none" aria-hidden="true"></svg><div class="bar"></div><div><div class="lbl" id="heroLbl"></div><div class="big num" id="heroBig"></div><div class="of num" id="heroOf"></div></div></div></section>`;
+}
+function filtersHTML(k){
+  const m=MODS[k];
+  const metr=k!=='general'&&m.metrics.length>1?`<div class="metricbar"><span class="lab" style="display:flex;gap:6px;align-items:center;color:var(--muted);font-size:12px;font-weight:600">${ic('chart',14)} Medir por</span><div class="seg">${m.metrics.map(([v,l])=>`<button data-metric="${v}" class="${S.metric[k]===v?'on':''}">${l}</button>`).join('')}</div></div>`:'';
+  const rowsH=k==='general'?'':`<div class="frows">${m.groups.map(([g,icn,dims])=>`<div class="frow"><div class="k">${ic(icn,15)}${g}</div><div class="v">${dims.map(d=>`<button class="pill" data-dim="${d}" id="pill_${d}">${LBL[d]} ${ic('down',13)}</button>`).join('')}</div></div>`).join('')}</div>`;
+  return `<section class="card filters">
+   <div class="rangebar"><span class="lab">${ic('cal',14)} Rango:</span><div class="seg" id="presets">${[['all','Todo 2023'],['q1','T1'],['q2','T2'],['q3','T3'],['q4','T4'],['h1','1er semestre'],['h2','2do semestre']].map(([v,l])=>`<button data-preset="${v}">${l}</button>`).join('')}</div>
+    <div class="dates"><label for="dFrom">Desde</label><input type="date" id="dFrom" min="2023-01-01" max="2023-12-31"><label for="dTo">Hasta</label><input type="date" id="dTo" min="2023-01-01" max="2023-12-31"></div></div>
+   ${k==='general'?'':`<div class="searchbar">${ic('filter',15)}<input type="search" id="q_${k}" placeholder="Buscar en todos los campos: nombre, placa, serie, folio, domicilio, agente, unidad…" value="${esc(S.q[k]||'')}" autocomplete="off" aria-label="Buscar"></div>`}
+   ${metr}${rowsH}
+   ${k==='general'?'':`<div class="activebar"><span class="ttl">Filtros seleccionados</span><span class="showing" id="showing"></span><div class="chips" id="chips"></div></div>`}
+  </section>`;
+}
+function render(){
+  TK=tok();memo.clear();disposeAll();closePop();
+  const k=S.mod;const main=$('#main');
+  if(k==='general'){renderGeneral();return}
+  if(k==='geo'){renderGeo();return}
+  const m=MODS[k];
+  main.innerHTML=heroHTML(k)+filtersHTML(k)+`<section class="card kpis" id="kpis"></section><div class="grid">${m.charts.map((ch,i)=>chartCard(k,ch,i)).join('')}</div>`;
+  m.charts.forEach((ch,i)=>{
+    const id=`c_${k}_${i}`;
+    if(ch.t==='pivot'||ch.t==='table'||ch.t==='people')return;
+    const el=document.getElementById(id);
+    if(ch.t==='map'){MM[k]=createMap(el);MM[k].ch=ch;return}
+    let draw,click;
+    if(ch.t==='bar'||ch.t==='hbar'){draw=()=>drawBar(k,ch,ch.t==='hbar');click=p=>{const d=p.data&&p.data.code;if(d!=null)toggle(k,ch.dim,d)}}
+    else if(ch.t==='donut'){draw=()=>drawDonut(k,ch);click=p=>{if(p.data&&p.data.code>=0)toggle(k,ch.dim,p.data.code)}}
+    else if(ch.t==='trend'){draw=()=>drawTrend(k,ch);click=p=>{if(S.gran[k]==='mes'&&p.componentType==='series')toggle(k,'mes',p.dataIndex)}}
+    else if(ch.t==='heat'){draw=()=>drawHeat(k,ch);click=p=>{const [h,d]=p.value;const sd=getSel(k,'dow'),sh=getSel(k,'hora');
+      const only=(a,c)=>a&&a[c]&&a.reduce((s,x)=>s+x,0)===1;
+      if(only(sd,d)&&only(sh,h)){delete S.f[k].dow;delete S.f[k].hora}else{setCodes(k,'dow',[d]);setCodes(k,'hora',[h])}S.page[k]=0;refresh()}}
+    mount(id,draw,click);
+  });
+  wireModule(k);refresh();
+}
+function wireModule(k){
+  const main=$('#main');
+  main.querySelectorAll('[data-gran]').forEach(b=>b.onclick=()=>{S.gran[k]=b.dataset.gran;b.parentNode.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));refresh()});
+  main.querySelectorAll('[data-metric]').forEach(b=>b.onclick=()=>{S.metric[k]=b.dataset.metric;main.querySelectorAll('[data-metric]').forEach(x=>x.classList.toggle('on',x===b));refresh()});
+  main.querySelectorAll('[data-mapmode]').forEach(b=>b.onclick=()=>{S.mapMode[k]=b.dataset.mapmode;b.parentNode.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));const s=$('#mapcolor_'+k);if(s)s.disabled=S.mapMode[k]==='heat';updateModuleMap(k)});
+  const mc=$('#mapcolor_'+k);if(mc)mc.onchange=()=>{S.mapColor[k]=mc.value;updateModuleMap(k)};
+  wireSearch([k]);
+  const pr=$('#pvr_'+k),pc=$('#pvc_'+k);
+  if(pr){const ch=MODS[k].charts.find(c=>c.t==='pivot');const upd=()=>{S.pivot[k]={r:pr.value,c:pc.value};refresh()};S.pivot[k]=S.pivot[k]||{r:ch.rows,c:ch.cols};pr.onchange=upd;pc.onchange=upd}
+  main.querySelectorAll('.pill[data-dim]').forEach(b=>b.onclick=e=>{e.stopPropagation();openPop(k,b.dataset.dim,b)});
+  wireDates();
+}
+function wireDates(){
+  document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{const P={all:[0,364],q1:[0,89],q2:[90,180],q3:[181,272],q4:[273,364],h1:[0,180],h2:[181,364]}[b.dataset.preset];S.from=P[0];S.to=P[1];S.preset=b.dataset.preset;for(const k in S.page)S.page[k]=0;refreshDates();S.mod==='general'?render():refresh()});
+  const f=$('#dFrom'),t=$('#dTo');
+  const onD=()=>{const a=Math.round((Date.parse(f.value+'T00:00:00Z')-DAY0)/864e5),b=Math.round((Date.parse(t.value+'T00:00:00Z')-DAY0)/864e5);
+    if(isNaN(a)||isNaN(b))return;S.from=Math.max(0,Math.min(a,b));S.to=Math.min(364,Math.max(a,b));S.preset='custom';refreshDates();S.mod==='general'?render():refresh()};
+  f.onchange=onD;t.onchange=onD;refreshDates();
+}
+function refreshDates(){
+  const f=$('#dFrom'),t=$('#dTo');if(f){f.value=dIso(S.from);t.value=dIso(S.to)}
+  document.querySelectorAll('[data-preset]').forEach(b=>b.classList.toggle('on',b.dataset.preset===S.preset));
+  const r=$('#rangeTxt');if(r)r.textContent=`${dLong(S.from)} – ${dLong(S.to)} · ${S.to-S.from+1} días`;
+}
+
+function refresh(){
+  memo.clear();const k=S.mod;if(k==='general'){renderGeneral();return}
+  if(k==='geo'){refreshGeo();return}
+  const m=MODS[k];const idx=rows(k);const metric=S.metric[k];
+  // hero
+  const tot=totalOf(k,idx,metric);
+  let allRange=0;{const fe=DS[k].fecha,w=wOf(k,metric);for(let i=0;i<DS[k].n;i++){if(fe[i]>=S.from&&fe[i]<=S.to)allRange+=w?w[i]:1}}
+  $('#heroLbl').textContent=metricName(k)+' en el filtro';$('#heroBig').textContent=fmt(tot);
+  $('#heroOf').textContent=`de ${fmt(allRange)} en el rango · ${pct(tot,allRange)}`;
+  sparkline($('#spark'),k,idx,metric);
+  // pills
+  m.groups.forEach(g=>g[2].forEach(d=>{const b=$('#pill_'+d);if(!b)return;const a=getSel(k,d);const n=a?a.reduce((s,x)=>s+x,0):0;b.classList.toggle('act',n>0);b.innerHTML=`${LBL[d]}${n?` <span class="cnt">${n}</span>`:''} ${ic('down',13)}`}));
+  // chips
+  const chips=[];if(S.q[k])chips.push(`<span class="chip"><i>Búsqueda:</i> “${esc(S.q[k])}”<button aria-label="Quitar búsqueda" data-rmq="1">${ic('x',11)}</button></span>`);for(const [d,a] of Object.entries(S.f[k])){const dm=DS[k].dims[d];a.forEach((v,c)=>{if(v)chips.push(`<span class="chip"><i>${LBL[d]}:</i> ${esc(dm.fixed?dm.dict[c]:title(dm.dict[c]))}<button aria-label="Quitar" data-rm="${d}:${c}">${ic('x',11)}</button></span>`)})}
+  $('#chips').innerHTML=chips.length?chips.join('')+`<button class="linkbtn" id="clearAll">Limpiar todo</button>`:`<span class="none">Sin filtros: se muestran todos los ${m.noun} del rango seleccionado.</span>`;
+  $('#chips').querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{const [d,c]=b.dataset.rm.split(':');toggle(k,d,+c)});
+  $('#chips').querySelectorAll('[data-rmq]').forEach(b=>b.onclick=()=>{setSearch([k],'');const qi=$('#q_'+k);if(qi)qi.value='';refresh()});
+  const ca=$('#clearAll');if(ca)ca.onclick=()=>{S.f[k]={};setSearch([k],'');const qi=$('#q_'+k);if(qi)qi.value='';S.page[k]=0;refresh()};
+  $('#showing').innerHTML=`Mostrando <b class="num">${fmt(idx.length)}</b> de ${fmt(DS[k].n)} ${m.noun}`;
+  refreshDates();
+  // kpis
+  const c=ctx(k);
+  $('#kpis').innerHTML=m.kpis(c).map(x=>`<div class="kpi"><div class="l">${esc(x.l)}</div><div class="v num${x.sm?' sm':''}${x.tone?' tone-'+x.tone:''}">${esc(x.v)}</div>${x.meter!=null?`<div class="meter"><i style="width:${Math.min(100,x.meter*100).toFixed(1)}%"></i></div>`:''}${x.s?`<div class="s">${esc(x.s)}</div>`:''}</div>`).join('');
+  // charts
+  for(const c2 of Object.values(CH))c2.inst.setOption(c2.draw(),{notMerge:true});
+  if(MM[k])updateModuleMap(k);
+  m.charts.forEach((ch,i)=>{const id=`c_${k}_${i}`;if(ch.t==='pivot')renderPivot(k,ch,id);if(ch.t==='table')renderTable(k,ch,id);if(ch.t==='people')renderPeople(k,ch,id)});
+  if(popState)fillPop();
+}
+function sparkline(svg,k,idx,metric){
+  const fe=DS[k].fecha,w=wOf(k,metric);const n=S.to-S.from+1;const nb=Math.min(n,60);const acc=new Float64Array(nb);
+  for(const i of idx){const b=Math.min(nb-1,Math.floor((fe[i]-S.from)/n*nb));acc[b]+=w?w[i]:1}
+  const mx=Math.max(1,...acc);const pts=Array.from(acc,(v,i)=>`${(i/(nb-1||1)*218+1).toFixed(1)},${(50-v/mx*46).toFixed(1)}`);
+  svg.innerHTML=`<polyline points="${pts.join(' ')}" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
+}
+function renderPivot(k,ch,id){
+  const pv=S.pivot[k]||{r:ch.rows,c:ch.cols};const el=document.getElementById(id);
+  if(pv.r===pv.c){el.innerHTML='<div style="padding:14px;color:var(--muted)">Elige dos dimensiones distintas.</div>';return}
+  const idx=rows(k);const metric=S.metric[k];const w=wOf(k,metric);
+  const R=DS[k].dims[pv.r],C=DS[k].dims[pv.c];const nr=R.dict.length,nc=C.dict.length;
+  const m=new Float64Array(nr*nc);for(const i of idx)m[R.c[i]*nc+C.c[i]]+=w?w[i]:1;
+  const rt=new Float64Array(nr),ct=new Float64Array(nc);for(let r=0;r<nr;r++)for(let c=0;c<nc;c++){rt[r]+=m[r*nc+c];ct[c]+=m[r*nc+c]}
+  const ordR=ORDER[pv.r],ordC=ORDER[pv.c];
+  let rs=[...Array(nr).keys()].filter(r=>rt[r]>0);rs.sort(ordR?(a,b)=>ordR.indexOf(R.dict[a])-ordR.indexOf(R.dict[b]):(a,b)=>rt[b]-rt[a]);rs=rs.slice(0,20);
+  let cs=[...Array(nc).keys()].filter(c=>ct[c]>0);cs.sort(ordC?(a,b)=>ordC.indexOf(C.dict[a])-ordC.indexOf(C.dict[b]):(a,b)=>ct[b]-ct[a]);cs=cs.slice(0,12);
+  let mx=0;rs.forEach(r=>cs.forEach(c=>mx=Math.max(mx,m[r*nc+c])));
+  const nm=(dm,v)=>dm.fixed?v:title(v);const tot=rt.reduce((a,b)=>a+b,0);
+  let h=`<table class="pv"><thead><tr><th>${LBL[pv.r]} \\ ${LBL[pv.c]}</th>${cs.map(c=>`<th class="r" title="${esc(nm(C,C.dict[c]))}">${esc(nm(C,C.dict[c]).slice(0,18))}</th>`).join('')}<th class="r">Total</th><th class="r">%</th></tr></thead><tbody>`;
+  rs.forEach(r=>{h+=`<tr><td class="rh" title="${esc(nm(R,R.dict[r]))}">${esc(nm(R,R.dict[r]))}</td>`+cs.map(c=>{const v=m[r*nc+c];const a=mx?v/mx:0;
+    return `<td class="cell" data-r="${r}" data-c="${c}" style="background:color-mix(in oklab,var(--accent) ${(a*62).toFixed(0)}%,transparent);color:${a>.55?'var(--bg)':'var(--fg)'}">${v?fmt(v):'·'}</td>`}).join('')+`<td class="r num"><b>${fmt(rt[r])}</b></td><td class="r num" style="color:var(--muted)">${pct(rt[r],tot)}</td></tr>`});
+  h+=`<tr class="tot"><td>Total</td>${cs.map(c=>`<td class="r num">${fmt(ct[c])}</td>`).join('')}<td class="r num">${fmt(tot)}</td><td class="r">100%</td></tr></tbody></table>`;
+  if(rs.length===20)h+='';
+  el.innerHTML=h;
+  el.querySelectorAll('td.cell').forEach(td=>td.onclick=()=>{const r=+td.dataset.r,c=+td.dataset.c;setCodes(k,pv.r,[r]);setCodes(k,pv.c,[c]);S.page[k]=0;refresh()});
+}
+function toast(t){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,2600)}
+
+/* ---------- Popover de filtros */
+let popState=null;
+function openPop(k,d,btn){
+  if(popState&&popState.d===d&&popState.k===k){closePop();return}
+  popState={k,d,btn,q:''};const pop=$('#pop');
+  pop.innerHTML=`<header><div class="h"><span>${LBL[d]}</span><button class="iconbtn" style="width:28px;height:28px" id="popX" aria-label="Cerrar">${ic('x',14)}</button></div><input type="search" id="popQ" placeholder="Buscar…" autocomplete="off"></header><ul id="popL"></ul><footer><button class="linkbtn" id="popClr">Limpiar</button><button class="linkbtn" id="popOnly">Solo los visibles</button></footer>`;
+  pop.hidden=false;placePop();fillPop();
+  $('#popX').onclick=closePop;
+  $('#popQ').oninput=e=>{popState.q=e.target.value.toUpperCase();fillPop()};
+  $('#popClr').onclick=()=>{delete S.f[k][d];S.page[k]=0;refresh()};
+  $('#popOnly').onclick=()=>{const vis=[...$('#popL').querySelectorAll('input')].map(x=>+x.dataset.code);setCodes(k,d,vis);S.page[k]=0;refresh()};
+  if(matchMedia('(pointer:fine)').matches)$('#popQ').focus();
+}
+function placePop(){
+  if(!popState)return;const pop=$('#pop');const btn=(popState.btn&&popState.btn.isConnected)?popState.btn:(document.getElementById('pill_'+popState.d)||popState.btn);const r=btn.getBoundingClientRect();
+  const W=Math.min(300,innerWidth-32);let x=Math.min(r.left,innerWidth-W-16);x=Math.max(16,x);
+  let y=r.bottom+6;const H=Math.min(440,innerHeight*.7);if(y+H>innerHeight-8)y=Math.max(8,r.top-H-6);
+  pop.style.left=x+'px';pop.style.top=y+'px';
+}
+function fillPop(){
+  if(!popState)return;const {k,d,q}=popState;const dm=DS[k].dims[d];
+  const g=groupBy(k,d,rows(k,[d]),S.metric[k]);const sel=getSel(k,d);
+  let it=dm.dict.map((name,code)=>({name,code,v:g[code]}));
+  const ord=ORDER[d];if(ord)it.sort((a,b)=>ord.indexOf(a.name)-ord.indexOf(b.name));else it.sort((a,b)=>(sel&&sel[b.code]?1:0)-(sel&&sel[a.code]?1:0)||b.v-a.v);
+  if(q)it=it.filter(x=>x.name.includes(q));
+  $('#popL').innerHTML=it.slice(0,300).map(x=>`<li class="${x.v?'':'zero'}"><label><input type="checkbox" data-code="${x.code}" ${sel&&sel[x.code]?'checked':''}><span class="nm">${esc(dm.fixed?x.name:title(x.name))}</span><span class="c num">${fmt(x.v)}</span></label></li>`).join('')||'<li style="padding:10px;color:var(--muted)">Sin coincidencias</li>';
+  $('#popL').querySelectorAll('input').forEach(cb=>cb.onchange=()=>toggle(k,d,+cb.dataset.code));
+  placePop();
+}
+function closePop(){popState=null;$('#pop').hidden=true}
+document.addEventListener('click',e=>{if(popState&&!e.target.closest('#pop')&&!e.target.closest('.pill'))closePop()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closePop()});
+addEventListener('scroll',()=>placePop(),{passive:true});addEventListener('resize',()=>placePop());
+
+/* ---------- Panel general */
+const GEN=[['acc','Accidentes viales'],['eve','Eventos y apoyos'],['bit','Bitácora'],['cor','Corralón'],['mal','Mal estacionados'],['det','Detenidos']];
+function renderGeneral(){
+  TK=tok();memo.clear();disposeAll();
+  const main=$('#main');
+  const dr=k=>{const fe=DS[k].fecha;const out=[];for(let i=0;i<DS[k].n;i++)if(fe[i]>=S.from&&fe[i]<=S.to)out.push(i);return out};
+  const R={};let all=0;GEN.forEach(([k])=>{R[k]=dr(k);all+=R[k].length});
+  const acc=DS.acc;let les=0,fal=0,at=0;const st=acc.dims.estatus;const atc=st.dict.indexOf('ATENDIDO');R.acc.forEach(i=>{les+=acc.vals.les[i];fal+=acc.vals.fal[i];if(st.c[i]===atc)at++});
+  if(!S.gLayers)S.gLayers={acc:true,mal:true,cor:true,det:true};
+  main.innerHTML=`<section class="card hero"><div><span class="datepill">${ic('cal',13)} <span id="rangeTxt"></span></span><h1>Vialidad y <em>movilidad urbana</em></h1><p>Indicadores operativos de la Dirección de Vialidad de Torreón: accidentes, servicios, bitácora, remisiones y detenciones.</p></div>
+   <div class="herostat"><svg class="spark" id="spark" viewBox="0 0 220 52" preserveAspectRatio="none" aria-hidden="true"></svg><div class="bar"></div><div><div class="lbl">Registros analizados</div><div class="big num">${fmt(all)}</div><div class="of">en 6 bases operativas</div></div></div></section>
+   ${filtersHTML('general')}
+   <section class="card kpis"><div class="kpi"><div class="l">Accidentes viales</div><div class="v num">${fmt(R.acc.length)}</div><div class="s">${fmt(R.acc.length/(S.to-S.from+1))} por día</div></div>
+    <div class="kpi"><div class="l">Atención de accidentes</div><div class="v num tone-accent">${pct(at,R.acc.length)}</div><div class="meter"><i style="width:${(at/(R.acc.length||1)*100).toFixed(1)}%"></i></div></div>
+    <div class="kpi"><div class="l">Lesionados</div><div class="v num tone-amber">${fmt(les)}</div><div class="s">En accidentes viales</div></div>
+    <div class="kpi"><div class="l">Fallecidos</div><div class="v num tone-rose">${fmt(fal)}</div><div class="s">En accidentes viales</div></div>
+    <div class="kpi"><div class="l">Detenidos</div><div class="v num">${fmt(R.det.length)}</div><div class="s">${fmt(R.cor.length)} vehículos al corralón</div></div></section>
+   <div class="tiles">${GEN.map(([k,l])=>`<button class="tile" data-mod="${k}" style="--tone:${MODS[k].tone}"><span class="h">${ic(MODS[k].icon,17)}${l}</span><span class="v num">${fmt(R[k].length)}</span><svg class="mb" viewBox="0 0 240 38" preserveAspectRatio="none" id="mb_${k}" aria-hidden="true"></svg><span class="s">${esc(MODS[k].sub)} · por mes</span><span class="go">Abrir módulo →</span></button>`).join('')}</div>
+   <div class="grid">
+    <section class="card cc s8"><div class="hd"><div><h3>${ic('map',16)}Mapa operativo integrado</h3><div class="sub">Clic en un punto para ver su ficha completa</div></div><div class="tools"><button class="linkbtn" data-mod="geo">${ic('map',13)} Abrir mapa completo</button></div></div><div class="mlegend" id="g_map_lg"></div><div class="lmap" id="g_map" style="height:460px"></div></section>
+    <section class="card cc s4"><div class="hd"><div><h3>${ic('clock',16)}Perfil horario</h3><div class="sub">Porcentaje de cada base por hora del día</div></div></div><div class="ch" id="g_hour" style="height:460px"></div></section>
+    <section class="card cc s6"><div class="hd"><div><h3>${ic('pin',16)}Carga por sector</h3><div class="sub">Registros por sector en las bases con sector</div></div></div><div class="ch" id="g_sec" style="height:360px"></div></section>
+    <section class="card cc s6"><div class="hd"><div><h3>${ic('crash',16)}Severidad mensual de accidentes</h3><div class="sub">Lesionados y fallecidos por mes</div></div></div><div class="ch" id="g_sev" style="height:360px"></div></section>
+   </div>`;
+  wireDates();
+  // sparkline total
+  {const n=S.to-S.from+1,nb=Math.min(n,60),a=new Float64Array(nb);GEN.forEach(([k])=>{const fe=DS[k].fecha;R[k].forEach(i=>{a[Math.min(nb-1,Math.floor((fe[i]-S.from)/n*nb))]++})});
+   const mx=Math.max(1,...a);$('#spark').innerHTML=`<polyline points="${Array.from(a,(v,i)=>`${(i/(nb-1||1)*218+1).toFixed(1)},${(50-v/mx*46).toFixed(1)}`).join(' ')}" fill="none" stroke="var(--accent)" stroke-width="1.8" vector-effect="non-scaling-stroke"/>`}
+  // mini barras por mes
+  GEN.forEach(([k])=>{const a=new Float64Array(12);const mc=DS[k].dims.mes.c;R[k].forEach(i=>a[mc[i]]++);const mx=Math.max(1,...a);const bw=240/12;
+    $('#mb_'+k).innerHTML=Array.from(a,(v,i)=>`<rect x="${(i*bw+2).toFixed(1)}" y="${(38-v/mx*36).toFixed(1)}" width="${(bw-4).toFixed(1)}" height="${(v/mx*36).toFixed(1)}" rx="2" style="fill:${MODS[k].tone}" opacity="${v?0.9:0.2}"><title>${MESES[i]}: ${fmt(v)}</title></rect>`).join('')});
+  // mapa integrado
+  {const o=createMap($('#g_map'));const groups=GEO_L.slice(0,4).map(([k])=>({k,idx:R[k],color:()=>LAYC(k)}));setPoints(o,groups,'cluster');
+   $('#g_map_lg').innerHTML=GEO_L.slice(0,4).map(([k,l])=>`<span class="lgi static"><i style="background:${LAYC(k)}"></i>${l} <b class="num">${fmt(R[k].filter(i=>hasGeo(k,i)).length)}</b></span>`).join('')}
+  // perfil horario
+  const HL=[['acc','Accidentes',TK.cat[1]],['eve','Eventos',TK.cat[2]],['bit','Bitácora',TK.cat[3]],['mal','Mal estacionados',TK.cat[5]],['det','Detenidos',TK.cat[4]]];
+  const ho=base();ho.tooltip.trigger='axis';ho.tooltip.valueFormatter=v=>v.toFixed(1)+'%';ho.grid={left:8,right:14,top:60,bottom:4,containLabel:true};
+  ho.legend={top:0,left:0,textStyle:{color:TK.fg,fontSize:11},itemWidth:14,itemHeight:3,icon:'roundRect'};
+  ho.xAxis=axisCat(HORAS.slice(0,24),{boundaryGap:false,axisLabel:{color:TK.muted,fontSize:10,interval:3}});ho.yAxis=axisVal({axisLabel:{color:TK.faint,fontSize:10.5,formatter:v=>v+'%'}});
+  ho.series=HL.map(([k,l,c])=>{const a=new Float64Array(24);const hc=DS[k].dims.hora.c;let n=0;R[k].forEach(i=>{if(hc[i]<24){a[hc[i]]++;n++}});return {name:l,type:'line',smooth:.3,showSymbol:false,lineStyle:{width:2,color:c},itemStyle:{color:c},data:Array.from(a,v=>n?+(v/n*100).toFixed(2):0)}});
+  mount('g_hour',()=>ho).inst.setOption(ho);
+  // sector
+  const SL=[['acc','Accidentes',TK.cat[1]],['eve','Eventos',TK.cat[2]],['mal','Mal estacionados',TK.cat[5]]];
+  const secs=DS.acc.dims.sector.dict.filter(s=>s!=='SIN DATO');
+  const so=base();so.tooltip.trigger='axis';so.tooltip.axisPointer={type:'shadow'};so.tooltip.valueFormatter=v=>fmt(v);so.grid={left:8,right:14,top:34,bottom:4,containLabel:true};
+  so.legend={top:0,left:0,textStyle:{color:TK.fg,fontSize:11},itemWidth:10,itemHeight:10,icon:'roundRect'};
+  so.xAxis=axisCat(secs);so.yAxis=axisVal();
+  so.series=SL.map(([k,l,c])=>{const dm=DS[k].dims.sector;const a={};R[k].forEach(i=>{const s=dm.dict[dm.c[i]];a[s]=(a[s]||0)+1});return {name:l,type:'bar',barGap:'12%',barMaxWidth:16,itemStyle:{color:c,borderRadius:[3,3,0,0]},data:secs.map(s=>a[s]||0)}});
+  mount('g_sec',()=>so).inst.setOption(so);
+  // severidad
+  const sl=new Float64Array(12),sf=new Float64Array(12);R.acc.forEach(i=>{const m=acc.dims.mes.c[i];sl[m]+=acc.vals.les[i];sf[m]+=acc.vals.fal[i]});
+  const vo=base();vo.tooltip.trigger='axis';vo.tooltip.axisPointer={type:'shadow'};vo.grid={left:8,right:14,top:34,bottom:4,containLabel:true};
+  vo.legend={top:0,left:0,textStyle:{color:TK.fg,fontSize:11},itemWidth:10,itemHeight:10,icon:'roundRect'};
+  vo.xAxis=axisCat(MESES);vo.yAxis=axisVal();
+  vo.series=[{name:'Lesionados',type:'bar',stack:'s',barMaxWidth:30,itemStyle:{color:TK.amber},data:Array.from(sl),label:{show:false}},
+    {name:'Fallecidos',type:'bar',stack:'s',barMaxWidth:30,itemStyle:{color:TK.rose,borderRadius:[4,4,0,0]},data:Array.from(sf),label:{show:true,position:'top',color:TK.muted,fontSize:10.5,formatter:p=>{const t=sl[p.dataIndex]+sf[p.dataIndex];return t?fmt(t):''}}}];
+  mount('g_sev',()=>vo).inst.setOption(vo);
+}
+
+
+/* ---------- Búsqueda */
+function setSearch(ks,v){ks.forEach(k=>{S.q[k]=v;S.qm[k]=v.trim()?searchMask(k,v):null;S.page[k]=0})}
+function wireSearch(ks){
+  ks.forEach(k=>{const el=$('#q_'+k);if(!el)return;let t;el.oninput=()=>{clearTimeout(t);t=setTimeout(()=>{setSearch(ks,el.value);refresh()},280)}});
+}
+
+/* ---------- Colores de capas */
+const LAYC=k=>({acc:TK.cat[1],mal:TK.cat[5],cor:TK.cat[4],det:TK.cat[3],eve:TK.cat[2],bit:TK.cat[0]})[k];
+const GEO_L=[['acc','Accidentes viales',['tipo','danos','estatus','sector']],['mal','Mal estacionados',['evento','estatus','sector']],['cor','Vehículos al corralón',['tipo','marca','grua']],['det','Detenidos',['etilico','edad','autoridad']],['eve','Eventos y apoyos',['accion','dependencia','sector']],['bit','Bitácora',['clave','grupo','unidad']]];
+const MAPMODES=[['cluster','Agrupado'],['points','Puntos'],['heat','Calor']];
+
+/* ---------- Mapa (Leaflet + red vial embebida) */
+let ROADS=null;
+function roads(){
+  if(ROADS)return ROADS;
+  const raw=ROADS_TEXT.trim();const nl=raw.indexOf('\n');const names=JSON.parse(raw.slice(0,nl));
+  const byC=[[],[],[],[],[]],named=[];
+  for(const ln of raw.slice(nl+1).split('\n')){const p=ln.split('|');if(p.length<3)continue;const c=+p[0],ni=+p[1];const a=p[2].split(',');let x=0,y=0;const pts=[];
+    for(let j=0;j+1<a.length;j+=2){x+=+a[j];y+=+a[j+1];pts.push([y/1e5,x/1e5])}
+    if(pts.length<2)continue;byC[c].push(pts);if(ni)named.push([c,names[ni-1],pts])}
+  ROADS={byC,named};return ROADS;
+}
+const TRC=[[25.475,-103.485],[25.615,-103.315]];
+const LM=[],MM={};let GM=null;
+const lro=new ResizeObserver(es=>es.forEach(e=>{const o=LM.find(x=>x.el===e.target);if(o)o.map.invalidateSize()}));
+function createMap(el){
+  const map=L.map(el,{preferCanvas:true,zoomSnap:.5,minZoom:11,maxZoom:19});
+  map.attributionControl.setPrefix(false);map.attributionControl.addAttribution('Red vial © colaboradores de OpenStreetMap');
+  L.control.scale({imperial:false}).addTo(map);
+  const s=getComputedStyle(document.documentElement),rc=i=>s.getPropertyValue('--road'+i).trim();
+  const R=roads(),rr=L.canvas({padding:.4});const W=[3.6,2.8,2.1,1.5,.8];const lines=[];
+  for(let c=4;c>=0;c--)lines.push([c,L.polyline(R.byC[c],{renderer:rr,color:rc(c),weight:W[c],interactive:false,lineCap:'round',lineJoin:'round',smoothFactor:1}).addTo(map)]);
+  const scaleW=()=>{const z=map.getZoom();const f=z>=17?2.6:z>=16?2:z>=15?1.6:z>=14?1.25:1;lines.forEach(([c,pl])=>pl.setStyle({weight:W[c]*f,opacity:c===4&&z<12.5?.45:1}))};
+  map.on('zoomend',scaleW);
+  const nr=L.canvas({padding:.4});
+  R.named.forEach(([c,nm,pts])=>L.polyline(pts,{renderer:nr,opacity:0,weight:9,interactive:true}).bindTooltip(nm,{sticky:true,className:'road',direction:'top',offset:[0,-8]}).addTo(map));
+  map.fitBounds(TRC);scaleW();
+  const o={el,map,layer:null,rend:L.canvas({padding:.3}),index:new Map(),mode:'cluster'};
+  LM.push(o);lro.observe(el);return o;
+}
+const ICONS={};
+const dotIcon=c=>ICONS[c]||(ICONS[c]=L.divIcon({className:'dot',html:`<i style="background:${c}"></i>`,iconSize:[14,14],iconAnchor:[7,7]}));
+function setPoints(o,groups,mode){
+  if(o.layer){o.map.removeLayer(o.layer);o.layer=null}
+  o.index.clear();o.mode=mode;let n=0;
+  if(mode==='heat'){
+    const pts=[];groups.forEach(g=>{const la=DS[g.k].vals.lat,ln=DS[g.k].vals.lng;for(const i of g.idx)if(la[i]!=null)pts.push([la[i],ln[i],1])});n=pts.length;
+    o.layer=L.heatLayer(pts,{radius:15,blur:17,minOpacity:.35,maxZoom:15,max:Math.max(2,pts.length/2500),gradient:{.15:'#1d4ed8',.35:'#0891b2',.55:'#22d3ee',.75:'#f59e0b',1:'#f43f5e'}}).addTo(o.map);
+    return n;
+  }
+  const add=[];
+  groups.forEach(g=>{const la=DS[g.k].vals.lat,ln=DS[g.k].vals.lng;for(const i of g.idx){if(la[i]==null)continue;n++;const col=g.color(i);
+    const m=mode==='cluster'?L.marker([la[i],ln[i]],{icon:dotIcon(col),keyboard:false}):L.circleMarker([la[i],ln[i]],{renderer:o.rend,radius:4.5,weight:1.2,color:TK.panel,fillColor:col,fillOpacity:.9});
+    m._ref=[g.k,i];add.push(m);o.index.set(g.k+':'+i,m)}});
+  if(mode==='cluster'){
+    const cg=L.markerClusterGroup({chunkedLoading:true,maxClusterRadius:48,showCoverageOnHover:false,spiderfyOnMaxZoom:true,disableClusteringAtZoom:18,
+      iconCreateFunction:c=>{const k=c.getChildCount();const s=k<20?30:k<200?36:k<1000?42:48;return L.divIcon({html:`<span>${k<1000?k:(k/1000).toFixed(1)+'k'}</span>`,className:'clu',iconSize:[s,s]})}});
+    cg.addLayers(add);o.layer=cg;
+  }else{o.layer=L.featureGroup(add)}
+  o.layer.on('click',e=>{const r=e.layer._ref;if(r)openPopup(o,r[0],r[1],e.layer.getLatLng())});
+  o.layer.addTo(o.map);return n;
+}
+function headline(k,i){
+  const f=key=>F(k,key,i);
+  if(k==='acc')return (f('tipo')?title(f('tipo')):'Reporte de accidente');
+  if(k==='eve')return title(f('accion')||'Evento');
+  if(k==='bit')return `${f('unidad')} · ${f('clave')}`;
+  if(k==='cor')return [f('marca_full'),f('submarca')].filter(Boolean).join(' ')||'Vehículo';
+  if(k==='mal')return title(f('evento')||'Reporte');
+  if(k==='det')return f('nombre')||'Detenido';
+}
+const POPF={eve:['domicilio','sector','dependencia','unidades','agentes','origen'],bit:['domicilio','unidad','grupo','clave','operador'],acc:['ubicacion','colonia_full','causa','danos','estatus','les','fal','p_nombres','p_placas'],mal:['domicilio','colonia_full','estatus','motivo','unidades','agentes'],
+  cor:['domicilio','tipo','color','placas','serie','infraccion','grua_full'],det:['edad_n','grado','placas','marca_full','ubicacion','autoridad','remision']};
+function popHTML(k,i){
+  const rows=(POPF[k]||[]).map(key=>{const v=F(k,key,i);return v===''||v==null||(typeof v==='number'&&!v&&key!=='les')?'':`<dt>${esc(FL[k][key]||LBL[key])}</dt><dd>${esc(v)}</dd>`}).join('');
+  return `<div class="pp"><div class="pk"><i style="background:${LAYC(k)}"></i>${esc(MODS[k].title)}</div><h4>${esc(headline(k,i))}</h4><div class="pm">${F(k,'fecha',i)}${F(k,'hm',i)?' · '+F(k,'hm',i):''}</div>${geoNote(k,i)}<dl>${rows}</dl><button class="linkbtn" data-detail="${k}:${i}">Ver ficha completa</button></div>`;
+}
+function geoNote(k,i){const q=DS[k].vals.geoq;if(!q)return '';return q[i]===2?'<div class="gq">Ubicación aproximada, estimada a partir del domicilio</div>':'<div class="gq ok">Ubicada a partir del domicilio registrado</div>'}
+function openPopup(o,k,i,ll){L.popup({maxWidth:340,minWidth:240,className:'opop',autoPanPadding:[30,30]}).setLatLng(ll).setContent(popHTML(k,i)).openOn(o.map)}
+function focusRecord(o,k,i){
+  if(!hasGeo(k,i))return;const ll=L.latLng(DS[k].vals.lat[i],DS[k].vals.lng[i]);const m=o.index.get(k+':'+i);
+  o.el.scrollIntoView({behavior:'smooth',block:'center'});
+  if(o.mode==='cluster'&&m){o.layer.zoomToShowLayer(m,()=>openPopup(o,k,i,m.getLatLng()))}else{o.map.setView(ll,18);openPopup(o,k,i,ll)}
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-detail]');if(b){const [k,i]=b.dataset.detail.split(':');openDetail(k,+i)}});
+
+function updateModuleMap(k){
+  const o=MM[k];if(!o)return;const ch=o.ch;const dim=S.mapColor[k]||ch.colorBy[0];const dm=DS[k].dims[dim];const idx=rows(k);const mode=S.mapMode[k]||'cluster';
+  const n=setPoints(o,[{k,idx,color:i=>colorOf(dm,dm.c[i])}],mode);
+  const cnt=new Float64Array(dm.dict.length);const la=DS[k].vals.lat;for(const i of idx)if(la[i]!=null)cnt[dm.c[i]]++;
+  const sel=getSel(k,dim);let items=dm.dict.map((name,code)=>({name,code,v:cnt[code]})).filter(x=>x.v>0||(sel&&sel[x.code]));
+  const ord=ORDER[dim];items.sort(ord?(a,b)=>ord.indexOf(a.name)-ord.indexOf(b.name):(a,b)=>b.v-a.v);
+  const lg=document.getElementById(o.el.id+'_lg');
+  lg.innerHTML=`<span class="lgn">${fmt(n)} con ubicación de ${fmt(idx.length)}</span>`+(mode==='heat'?'':items.slice(0,12).map(x=>`<button class="lgi${sel&&!sel[x.code]?' off':''}" data-code="${x.code}"><i style="background:${colorOf(dm,x.code)}"></i>${esc(dm.fixed?x.name:title(x.name))} <b class="num">${fmt(x.v)}</b></button>`).join(''));
+  lg.querySelectorAll('[data-code]').forEach(b=>b.onclick=()=>toggle(k,dim,+b.dataset.code));
+}
+
+/* ---------- Tablas con filtro por columna */
+const GS={};
+function grid(el,id,o){
+  const st=GS[id]||(GS[id]={cf:{},sort:null,dir:1,page:0,per:25});
+  el.innerHTML=`<div class="gbar"><span class="gcount num"></span><span class="gtools"><label class="hint" for="${id}_per">Filas</label><select id="${id}_per">${[10,25,50,100].map(n=>`<option ${n===st.per?'selected':''}>${n}</option>`).join('')}</select><button class="linkbtn gclr">Limpiar filtros de columna</button><button class="linkbtn gcp">${ic('copy',13)} Copiar CSV</button></span></div>
+   <div class="tw gt"><table><thead><tr>${o.cols.map((c,ci)=>`<th class="srt${c.num?' r':''}" data-ci="${ci}" title="Ordenar">${esc(c.l)}<span class="sa"></span></th>`).join('')}</tr><tr class="fr">${o.cols.map((c,ci)=>`<th><input data-ci="${ci}" value="${esc(st.cf[ci]||'')}" placeholder="Filtrar…" aria-label="Filtrar ${esc(c.l)}"></th>`).join('')}</tr></thead><tbody></tbody></table></div>
+   <div class="pager"></div>`;
+  const tb=$('tbody',el),pg=$('.pager',el),cnt=$('.gcount',el);let filt=o.rows;
+  const compute=()=>{
+    let r=o.rows;const act=Object.entries(st.cf).filter(([,v])=>v&&v.trim()).map(([ci,v])=>[o.cols[ci],norm(v.trim())]);
+    if(act.length)r=r.filter(x=>act.every(([c,q])=>norm(c.get(x)).includes(q)));
+    if(st.sort!=null){const c=o.cols[st.sort];const sv=c.sort||c.get;r=r.slice().sort((a,b)=>{const A=sv(a),B=sv(b);return((typeof A==='number'&&typeof B==='number')?A-B:String(A).localeCompare(String(B),'es'))*st.dir})}
+    filt=r;
+  };
+  const body=()=>{
+    const per=st.per,pages=Math.max(1,Math.ceil(filt.length/per));st.page=Math.min(st.page,pages-1);const p=st.page;const sl=filt.slice(p*per,p*per+per);
+    tb.innerHTML=sl.map((x,ri)=>`<tr data-ri="${p*per+ri}">${o.cols.map(c=>{const v=c.get(x);if(c.render)return `<td>${c.render(v,x)}</td>`;
+      if(c.num)return `<td class="r num">${v===''||v==null||v===0?'<span class="z">0</span>':fmt(v)}</td>`;const s=v==null?'':String(v);
+      return `<td class="${c.long?'long':''}"${c.long&&s.length>36?` title="${esc(s)}"`:''}>${esc(s)}</td>`}).join('')}</tr>`).join('')||`<tr><td colspan="${o.cols.length}" class="emptyrow">No hay registros con estos filtros.</td></tr>`;
+    cnt.innerHTML=`<b>${fmt(filt.length)}</b> registros${filt.length!==o.rows.length?` de ${fmt(o.rows.length)}`:''}`;
+    pg.innerHTML=`<span class="num">${fmt(filt.length?p*per+1:0)}–${fmt(Math.min(filt.length,p*per+per))} de ${fmt(filt.length)}</span><span class="b"><button class="linkbtn" data-pg="-1" ${p===0?'disabled':''}>Anterior</button><span style="align-self:center">Página ${p+1} de ${pages}</span><button class="linkbtn" data-pg="1" ${p>=pages-1?'disabled':''}>Siguiente</button></span>`;
+    pg.querySelectorAll('[data-pg]').forEach(b=>b.onclick=()=>{st.page+=+b.dataset.pg;body()});
+    el.querySelectorAll('th.srt').forEach(th=>{const ci=+th.dataset.ci;$('.sa',th).textContent=st.sort===ci?(st.dir>0?' ▲':' ▼'):''});
+  };
+  el.querySelectorAll('th.srt').forEach(th=>th.onclick=()=>{const ci=+th.dataset.ci;if(st.sort===ci)st.dir=-st.dir;else{st.sort=ci;st.dir=1}compute();body()});
+  el.querySelectorAll('tr.fr input').forEach(inp=>{let t;inp.oninput=()=>{clearTimeout(t);t=setTimeout(()=>{st.cf[inp.dataset.ci]=inp.value;st.page=0;compute();body()},220)}});
+  $('#'+id+'_per').onchange=e=>{st.per=+e.target.value;st.page=0;body()};
+  $('.gclr',el).onclick=()=>{st.cf={};el.querySelectorAll('tr.fr input').forEach(i=>i.value='');st.page=0;compute();body()};
+  $('.gcp',el).onclick=()=>{
+    const q=v=>{const s=v==null?'':String(v);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s};
+    const csv=[o.cols.map(c=>q(c.l)).join(',')].concat(filt.map(x=>o.cols.map(c=>q(c.csv?c.csv(x):c.get(x))).join(','))).join('\n');
+    const done=()=>toast(`Copiado: ${fmt(filt.length)} filas. Pégalas en Excel.`);
+    const fb=()=>{let ta=$('textarea.copybox',el);if(!ta){ta=document.createElement('textarea');ta.className='copybox';ta.readOnly=true;el.appendChild(ta)}ta.value=csv;ta.focus();ta.select();toast('Texto seleccionado: usa Ctrl+C para copiarlo.')};
+    try{navigator.clipboard.writeText(csv).then(done,fb)}catch(e){fb()}
+  };
+  tb.onclick=e=>{const tr=e.target.closest('tr[data-ri]');if(tr&&o.onRow)o.onRow(filt[+tr.dataset.ri])};
+  compute();body();
+}
+const hmMin=(k,i)=>{const t=DS[k].txt.hm;if(!t)return 0;const s=t.dict[t.c[i]];return s?(+s.slice(0,2))*60+(+s.slice(3,5)):0};
+const LONG=new Set(['razonamiento','observaciones','ubicacion','domicilio','direccion','p_nombres','p_placas','p_tels','agentes','colonia_full']);
+const statusTag=v=>v?`<span class="tag ${v==='ATENDIDO'?'ok':'no'}">${v==='ATENDIDO'?'Atendido':'No atendido'}</span>`:'';
+function colDef(k,c){
+  const isNum=DS[k].vals[c]&&!['fecha','hora','lat','lng'].includes(c)&&!DS[k].dims[c];
+  return {l:FL[k][c]||LBL[c]||c,get:i=>F(k,c,i),num:!!isNum,long:LONG.has(c),sort:c==='fecha'?(i=>DS[k].fecha[i]*1440+hmMin(k,i)):undefined,render:c==='estatus'?statusTag:undefined};
+}
+function sortedRows(k){const idx=Array.from(rows(k));const fe=DS[k].fecha;idx.sort((a,b)=>fe[b]-fe[a]||hmMin(k,b)-hmMin(k,a));return idx}
+function renderTable(k,ch,id){grid(document.getElementById(id),id,{rows:sortedRows(k),cols:ch.cols.map(c=>colDef(k,c)),onRow:i=>openDetail(k,i)})}
+function renderPeople(k,ch,id){
+  const pass=new Uint8Array(DS.acc.n);for(const i of rows('acc'))pass[i]=1;
+  const js=[];for(let j=0;j<ACCP.n;j++)if(pass[ACCP.acc[j]])js.push(j);
+  const fe=DS.acc.fecha;js.sort((a,b)=>fe[ACCP.acc[b]]-fe[ACCP.acc[a]]||hmMin('acc',ACCP.acc[b])-hmMin('acc',ACCP.acc[a])||ACCP.num[a]-ACCP.num[b]);
+  const cols=[{l:'Fecha',get:j=>F('acc','fecha',ACCP.acc[j]),sort:j=>fe[ACCP.acc[j]]*1440+hmMin('acc',ACCP.acc[j])},{l:'Hora',get:j=>F('acc','hm',ACCP.acc[j])},
+    {l:'Ubicación del accidente',get:j=>F('acc','ubicacion',ACCP.acc[j]),long:true},{l:'Tipo',get:j=>F('acc','tipo',ACCP.acc[j])},{l:'#',get:j=>ACCP.num[j],num:true}]
+    .concat(['nombre','sexo','edad','tel','domicilio','servicio','tiposerv','clasif','marca','modelo','placas','color'].map(f=>({l:PFL[f],get:j=>PV(j,f),long:f==='domicilio'||f==='nombre'})));
+  grid(document.getElementById(id),id,{rows:js,cols,onRow:j=>openDetail('acc',ACCP.acc[j])});
+}
+
+/* ---------- Ficha completa */
+function openDetail(k,i){
+  const md=$('#modal');const fl=FL[k];const longK=['razonamiento','observaciones'];
+  const fields=Object.entries(fl).filter(([key])=>!longK.includes(key)&&!key.startsWith('p_')&&key!=='fecha'&&key!=='hm').map(([key,l])=>{const v=F(k,key,i);return(v===''||v==null)?'':`<div><span>${esc(l)}</span><b>${esc(v)}</b></div>`}).join('');
+  const longs=longK.filter(key=>fl[key]&&F(k,key,i)).map(key=>`<div class="ltxt"><span>${esc(fl[key])}</span><p>${esc(F(k,key,i))}</p></div>`).join('');
+  let ppl='';
+  if(k==='acc'&&PBY[i].length){const fs=['nombre','sexo','edad','tel','domicilio','servicio','tiposerv','clasif','marca','modelo','placas','color'];
+    ppl=`<h3 class="mh3">${ic('users',15)} Personas y vehículos involucrados (${PBY[i].length})</h3><div class="tw"><table><thead><tr><th>#</th>${fs.map(f=>`<th>${PFL[f]}</th>`).join('')}</tr></thead><tbody>${PBY[i].map(j=>`<tr><td class="num">${ACCP.num[j]}</td>${fs.map(f=>`<td>${esc(PV(j,f))}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`}
+  const geo=hasGeo(k,i);
+  md.innerHTML=`<div class="mbox card" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="mhd"><div><div class="pk"><i style="background:${LAYC(k)||'var(--accent)'}"></i>${esc(MODS[k].title)}</div><h2 id="mTitle">${esc(headline(k,i))}</h2><div class="sub">${F(k,'fecha',i)}${F(k,'hm',i)?' · '+F(k,'hm',i)+' h':''}${geo?` · ${DS[k].vals.lat[i].toFixed(5)}, ${DS[k].vals.lng[i].toFixed(5)}`:''}</div></div>
+    <div class="tools">${geo&&GEO_L.some(g=>g[0]===k)?`<button class="linkbtn" id="mMap">${ic('map',13)} Ver en mapa</button>`:''}<button class="iconbtn" id="mX" aria-label="Cerrar">${ic('x',16)}</button></div></div>
+    ${geoNote(k,i)}<div class="dl">${fields}</div>${longs}${ppl}</div>`;
+  md.hidden=false;document.body.style.overflow='hidden';
+  $('#mX').onclick=closeDetail;md.onclick=e=>{if(e.target===md)closeDetail()};
+  const mm=$('#mMap');if(mm)mm.onclick=()=>{closeDetail();S.focus={k,i};S.geoOn[k]=true;if(S.mod==='geo'){focusRecord(GM,k,i)}else go('geo')};
+  $('#mX').focus();
+}
+function closeDetail(){$('#modal').hidden=true;document.body.style.overflow=''}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#modal').hidden)closeDetail()});
+
+/* ---------- Módulo: mapa georreferenciado */
+S.geoOn={acc:true,mal:true,cor:true,det:true,eve:false,bit:false};S.geoVisible=true;
+function renderGeo(){
+  const main=$('#main');
+  main.innerHTML=`<section class="card hero"><div><span class="datepill">${ic('cal',13)} <span id="rangeTxt"></span></span><h1>Mapa <em>georreferenciado</em></h1><p>Todos los módulos sobre la red vial de Torreón. Accidentes, mal estacionados, corralón y detenidos usan sus coordenadas; eventos y bitácora se ubican a partir del domicilio registrado.</p></div>
+   <div class="herostat"><svg class="spark" id="spark" viewBox="0 0 220 52" preserveAspectRatio="none" aria-hidden="true"></svg><div class="bar"></div><div><div class="lbl">Puntos en el mapa</div><div class="big num" id="heroBig"></div><div class="of num" id="heroOf"></div></div></div></section>
+   <section class="card filters">
+    <div class="rangebar"><span class="lab">${ic('cal',14)} Rango:</span><div class="seg" id="presets">${[['all','Todo 2023'],['q1','T1'],['q2','T2'],['q3','T3'],['q4','T4'],['h1','1er semestre'],['h2','2do semestre']].map(([v,l])=>`<button data-preset="${v}">${l}</button>`).join('')}</div>
+     <div class="dates"><label for="dFrom">Desde</label><input type="date" id="dFrom" min="2023-01-01" max="2023-12-31"><label for="dTo">Hasta</label><input type="date" id="dTo" min="2023-01-01" max="2023-12-31"></div></div>
+    <div class="searchbar">${ic('filter',15)}<input type="search" id="q_geo" placeholder="Buscar en todas las capas: nombre, placa, serie, domicilio, colonia, agente…" value="${esc(S.q.acc||'')}" autocomplete="off" aria-label="Buscar"></div>
+    <div class="frows">${GEO_L.map(([k,l,dims])=>`<div class="frow"><div class="k"><label class="lyr"><input type="checkbox" data-layer="${k}" ${S.geoOn[k]?'checked':''}><i style="background:${LAYC(k)}"></i>${l}</label></div><div class="v">${dims.map(d=>`<button class="pill" data-gk="${k}" data-dim="${d}" id="pill_${k}_${d}">${LBL[d]} ${ic('down',13)}</button>`).join('')}<span class="lcount num" id="lc_${k}"></span></div></div>`).join('')}</div>
+    <div class="activebar"><span class="ttl">Filtros seleccionados</span><span class="showing">Los filtros de cada capa se comparten con su módulo</span><div class="chips" id="chips"></div></div>
+   </section>
+   <div class="grid"><section class="card cc"><div class="hd"><div><h3>${ic('map',16)}Mapa de la ciudad</h3><div class="sub">Clic en un punto para ver la ficha · pasa el cursor sobre una avenida para ver su nombre</div></div>
+     <div class="tools"><div class="minis">${MAPMODES.map(([v,l])=>`<button data-gmode="${v}" class="${S.geoMode===v?'on':''}">${l}</button>`).join('')}</div><button class="linkbtn" id="gFit">Ajustar a resultados</button></div></div>
+     <div class="mlegend" id="g_lg"></div><div class="lmap" id="geo_map" style="height:min(680px,72vh)"></div></section>
+   <section class="card cc"><div class="hd"><div><h3>${ic('table',16)}Registros georreferenciados</h3><div class="sub">Clic en una fila para ubicarla en el mapa · filtra por columna o busca arriba</div></div>
+     <div class="tools"><label class="lyr" style="font-size:12px"><input type="checkbox" id="gVis" ${S.geoVisible?'checked':''}> Solo el área visible del mapa</label></div></div><div id="geo_tbl"></div></section></div>`;
+  wireDates();
+  GM=createMap($('#geo_map'));
+  let mt;GM.map.on('moveend',()=>{if(!S.geoVisible)return;clearTimeout(mt);mt=setTimeout(geoTable,250)});
+  main.querySelectorAll('[data-layer]').forEach(cb=>cb.onchange=()=>{S.geoOn[cb.dataset.layer]=cb.checked;refreshGeo()});
+  main.querySelectorAll('.pill[data-gk]').forEach(b=>b.onclick=e=>{e.stopPropagation();openPop(b.dataset.gk,b.dataset.dim,b)});
+  main.querySelectorAll('[data-gmode]').forEach(b=>b.onclick=()=>{S.geoMode=b.dataset.gmode;main.querySelectorAll('[data-gmode]').forEach(x=>x.classList.toggle('on',x===b));refreshGeo()});
+  $('#gVis').onchange=e=>{S.geoVisible=e.target.checked;geoTable()};
+  $('#gFit').onclick=()=>{const pts=[];GEO_L.forEach(([k])=>{if(!S.geoOn[k])return;const la=DS[k].vals.lat,ln=DS[k].vals.lng;for(const i of rows(k))if(la[i]!=null)pts.push([la[i],ln[i]])});if(pts.length)GM.map.fitBounds(L.latLngBounds(pts).pad(.05),{maxZoom:17})};
+  const qi=$('#q_geo');let t;qi.oninput=()=>{clearTimeout(t);t=setTimeout(()=>{setSearch(GEO_L.map(g=>g[0]),qi.value);refreshGeo()},300)};
+  refreshGeo();
+  if(S.focus){const {k,i}=S.focus;S.focus=null;setTimeout(()=>focusRecord(GM,k,i),350)}
+}
+function refreshGeo(){
+  memo.clear();refreshDates();
+  let tot=0,all=0;const groups=[];
+  GEO_L.forEach(([k,l,dims])=>{const idx=rows(k);const la=DS[k].vals.lat;let n=0;for(const i of idx)if(la[i]!=null)n++;
+    $('#lc_'+k).textContent=`${fmt(n)} puntos`;if(S.geoOn[k]){tot+=n;groups.push({k,idx,color:()=>LAYC(k)})}
+    let a=0;const fe=DS[k].fecha;for(let i=0;i<DS[k].n;i++)if(la[i]!=null&&fe[i]>=S.from&&fe[i]<=S.to)a++;all+=a;
+    dims.forEach(d=>{const b=$(`#pill_${k}_${d}`);const s=getSel(k,d);const c=s?s.reduce((x,y)=>x+y,0):0;b.classList.toggle('act',c>0);b.innerHTML=`${LBL[d]}${c?` <span class="cnt">${c}</span>`:''} ${ic('down',13)}`})});
+  $('#heroBig').textContent=fmt(tot);$('#heroOf').textContent=`de ${fmt(all)} ubicados en el rango`;
+  {const n=S.to-S.from+1,nb=Math.min(n,60),a=new Float64Array(nb);groups.forEach(g=>{const fe=DS[g.k].fecha;for(const i of g.idx)a[Math.min(nb-1,Math.floor((fe[i]-S.from)/n*nb))]++});
+   const mx=Math.max(1,...a);$('#spark').innerHTML=`<polyline points="${Array.from(a,(v,i)=>`${(i/(nb-1||1)*218+1).toFixed(1)},${(50-v/mx*46).toFixed(1)}`).join(' ')}" fill="none" stroke="var(--accent)" stroke-width="1.8" vector-effect="non-scaling-stroke"/>`}
+  setPoints(GM,groups,S.geoMode);
+  $('#g_lg').innerHTML=GEO_L.filter(([k])=>S.geoOn[k]).map(([k,l])=>`<span class="lgi static"><i style="background:${LAYC(k)}"></i>${l}</span>`).join('')+(S.geoMode==='heat'?'<span class="lgn">Mapa de calor: más intenso donde se concentran los registros</span>':'');
+  // chips
+  const chips=[];if(S.q.acc)chips.push(`<span class="chip"><i>Búsqueda:</i> “${esc(S.q.acc)}”<button aria-label="Quitar búsqueda" data-rmq="1">${ic('x',11)}</button></span>`);
+  GEO_L.forEach(([k,l])=>{for(const [d,a] of Object.entries(S.f[k])){const dm=DS[k].dims[d];a.forEach((v,c)=>{if(v)chips.push(`<span class="chip"><i>${esc(MODS[k].title)} · ${LBL[d]}:</i> ${esc(dm.fixed?dm.dict[c]:title(dm.dict[c]))}<button aria-label="Quitar" data-rm="${k}:${d}:${c}">${ic('x',11)}</button></span>`)})}});
+  $('#chips').innerHTML=chips.length?chips.join('')+`<button class="linkbtn" id="clearAll">Limpiar todo</button>`:'<span class="none">Sin filtros: se muestran todos los puntos del rango seleccionado.</span>';
+  $('#chips').querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{const [k,d,c]=b.dataset.rm.split(':');toggle(k,d,+c)});
+  $('#chips').querySelectorAll('[data-rmq]').forEach(b=>b.onclick=()=>{setSearch(GEO_L.map(g=>g[0]),'');$('#q_geo').value='';refreshGeo()});
+  const ca=$('#clearAll');if(ca)ca.onclick=()=>{GEO_L.forEach(([k])=>S.f[k]={});setSearch(GEO_L.map(g=>g[0]),'');$('#q_geo').value='';refreshGeo()};
+  geoTable();
+  if(popState)fillPop();
+}
+const GCOL={
+  concepto:{acc:'tipo',mal:'evento',cor:'tipo',det:'etilico',eve:'accion',bit:'clave'},
+  lugar:{acc:'ubicacion',mal:'domicilio',cor:'domicilio',det:'ubicacion',eve:'domicilio',bit:'domicilio'},
+  colonia:{acc:'colonia_full',mal:'colonia_full'},
+  persona:{acc:'p_nombres',det:'nombre'},
+  placas:{acc:'p_placas',cor:'placas',det:'placas'},
+  vehiculo:{cor:'marca_full',det:'marca_full'},
+  serie:{cor:'serie',det:'serie'},
+  agentes:{acc:'agentes',mal:'agentes',cor:'agentes',det:'agentes',eve:'agentes',bit:'unidad'},
+  estatus:{acc:'estatus',mal:'estatus',det:'autoridad'}
+};
+function geoTable(){
+  if(!GM)return;const b=GM.map.getBounds();const out=[];
+  GEO_L.forEach(([k])=>{if(!S.geoOn[k])return;const la=DS[k].vals.lat,ln=DS[k].vals.lng;for(const i of rows(k)){if(la[i]==null)continue;if(S.geoVisible&&!b.contains([la[i],ln[i]]))continue;out.push([k,i])}});
+  out.sort((x,y)=>DS[y[0]].fecha[y[1]]-DS[x[0]].fecha[x[1]]||hmMin(y[0],y[1])-hmMin(x[0],x[1]));
+  const g=(key)=>r=>{const f=GCOL[key][r[0]];return f?F(r[0],f,r[1]):''};
+  const cols=[{l:'Capa',get:r=>MODS[r[0]].title,render:(v,r)=>`<span class="ltag"><i style="background:${LAYC(r[0])}"></i>${esc(v)}</span>`},
+    {l:'Fecha',get:r=>F(r[0],'fecha',r[1]),sort:r=>DS[r[0]].fecha[r[1]]*1440+hmMin(r[0],r[1])},{l:'Hora',get:r=>F(r[0],'hm',r[1])},
+    {l:'Concepto',get:g('concepto')},{l:'Ubicación',get:g('lugar'),long:true},{l:'Colonia',get:g('colonia'),long:true},{l:'Persona(s)',get:g('persona'),long:true},
+    {l:'Placas',get:g('placas'),long:true},{l:'Vehículo',get:g('vehiculo')},{l:'Serie',get:g('serie')},{l:'Agente(s)',get:g('agentes'),long:true},{l:'Estatus / autoridad',get:g('estatus')}];
+  grid($('#geo_tbl'),'geo_tbl',{rows:out,cols,onRow:r=>focusRecord(GM,r[0],r[1])});
+}
+
+paintNav();render();
+};
+</script>
+<script>
+(async function(){
+  const t=document.getElementById('loadTxt');
+  try{
+    const [d,r]=await Promise.all([fetch('data/omega.json',{cache:'no-cache'}),fetch('data/red-vial.txt',{cache:'no-cache'})]);
+    if(!d.ok||!r.ok)throw new Error('HTTP '+d.status+' / '+r.status);
+    t.textContent='Preparando tablero…';
+    const [dt,rt]=await Promise.all([d.text(),r.text()]);
+    window.__omegaApp(dt,rt);
+  }catch(e){t.textContent='No se pudieron cargar los datos ('+e.message+'). Recarga la página.';console.error(e)}
+})();
+</script>
+</body>
+</html>

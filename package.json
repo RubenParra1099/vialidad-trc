@@ -1,0 +1,10 @@
+{
+  "name": "omega-vialidad-trc",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Plataforma directiva de KPIs de vialidad y movilidad urbana · Torreón",
+  "type": "module",
+  "dependencies": {
+    "@vercel/functions": "^3.10.1"
+  }
+}
