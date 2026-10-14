@@ -690,34 +690,34 @@ svg.leaflet-image-layer.leaflet-interactive path {
 /* Layout: barra superior + navegación lateral de módulos + lienzo con hero, panel de filtros, KPIs y rejilla de 12 columnas.
    Dark-first, inspirado en el panel Arg.Os (slate profundo, acentos cian→azul, ámbar para cifras). */
 :root{
-  --bg:#020617; --side:#0b1224; --panel:#0c1427; --panel2:#111b33; --raise:#16213d;
-  --line:#1e293b; --line2:#2a3854;
-  --fg:#f1f5f9; --muted:#94a3b8; --faint:#64748b;
-  --accent:#22d3ee; --accent2:#3b82f6; --amber:#f59e0b; --rose:#f43f5e; --ok:#10b981;
-  --chip:#0e7490; --chipbg:rgba(34,211,238,.12);
-  --c1:#0891b2; --c2:#db2777; --c3:#2563eb; --c4:#d97706; --c5:#8b5cf6; --c6:#059669; --c7:#ea580c; --cx:#64748b;
-  --seq0:#0f1a31; --seq1:#22d3ee; --fade:#22314f;
+  --bg:#0a101d; --side:#101726; --panel:#121a2b; --panel2:#172137; --raise:#1d2942;
+  --line:#222d44; --line2:#323f5b;
+  --fg:#f3f5f9; --muted:#9aa3b4; --faint:#6b7589;
+  --accent:#2bbfc1; --accent2:#3a8fd6; --amber:#f59e0b; --rose:#ee3f7c; --ok:#10b981;
+  --chip:#0a969c; --chipbg:rgba(43,191,193,.13);
+  --c1:#0a969c; --c2:#d81b60; --c3:#1d6fb8; --c4:#d97706; --c5:#8b5cf6; --c6:#059669; --c7:#ea580c; --cx:#64748b;
+  --seq0:#142033; --seq1:#2bbfc1; --fade:#263249;
   --shadow:0 10px 30px -12px rgba(0,0,0,.6);
   --font:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   color-scheme:dark;
 }
 @media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){
-  --bg:#eef2f7; --side:#ffffff; --panel:#ffffff; --panel2:#f6f8fb; --raise:#eef2f7;
-  --line:#e2e8f0; --line2:#cbd5e1;
-  --fg:#0f172a; --muted:#475569; --faint:#64748b;
-  --accent:#0891b2; --accent2:#2563eb; --amber:#d97706; --rose:#e11d48; --ok:#059669;
-  --chip:#0e7490; --chipbg:rgba(8,145,178,.10);
-  --seq0:#f1f5f9; --seq1:#0891b2; --fade:#dbe3ee;
+  --bg:#f5f7f9; --side:#ffffff; --panel:#ffffff; --panel2:#f4f7f9; --raise:#edf2f5;
+  --line:#e3e8ee; --line2:#cdd5df;
+  --fg:#141a2a; --muted:#5a6375; --faint:#6f7889;
+  --accent:#007a82; --accent2:#0e72b5; --amber:#d97706; --rose:#d81b60; --ok:#059669;
+  --chip:#007a82; --chipbg:rgba(0,122,130,.09);
+  --seq0:#eef3f6; --seq1:#007a82; --fade:#dce4eb;
   --shadow:0 10px 30px -18px rgba(15,23,42,.35);
   color-scheme:light;
 }}
 :root[data-theme="light"]{
-  --bg:#eef2f7; --side:#ffffff; --panel:#ffffff; --panel2:#f6f8fb; --raise:#eef2f7;
-  --line:#e2e8f0; --line2:#cbd5e1;
-  --fg:#0f172a; --muted:#475569; --faint:#64748b;
-  --accent:#0891b2; --accent2:#2563eb; --amber:#d97706; --rose:#e11d48; --ok:#059669;
-  --chip:#0e7490; --chipbg:rgba(8,145,178,.10);
-  --seq0:#f1f5f9; --seq1:#0891b2; --fade:#dbe3ee;
+  --bg:#f5f7f9; --side:#ffffff; --panel:#ffffff; --panel2:#f4f7f9; --raise:#edf2f5;
+  --line:#e3e8ee; --line2:#cdd5df;
+  --fg:#141a2a; --muted:#5a6375; --faint:#6f7889;
+  --accent:#007a82; --accent2:#0e72b5; --amber:#d97706; --rose:#d81b60; --ok:#059669;
+  --chip:#007a82; --chipbg:rgba(0,122,130,.09);
+  --seq0:#eef3f6; --seq1:#007a82; --fade:#dce4eb;
   --shadow:0 10px 30px -18px rgba(15,23,42,.35);
   color-scheme:light;
 }
@@ -725,7 +725,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 [hidden]{display:none!important}
 html,body{height:100%}
 body{margin:0}
-body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+body{background:radial-gradient(900px 620px at 0% 0%,color-mix(in oklab,var(--accent) 9%,transparent),transparent 70%),radial-gradient(760px 560px at 0% 100%,color-mix(in oklab,var(--rose) 6%,transparent),transparent 70%),radial-gradient(900px 700px at 100% 100%,color-mix(in oklab,var(--accent2) 8%,transparent),transparent 70%),var(--bg);background-attachment:fixed;color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
 button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -782,13 +782,13 @@ main{min-width:0;padding-block:22px 40px;padding-left:max(16px,env(safe-area-ins
 
 /* hero */
 .hero{position:relative;overflow:hidden;padding:20px 24px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:end}
-.hero::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--accent2) 0%,var(--accent) 45%,var(--amber) 100%)}
+.hero::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--accent) 0%,var(--accent2) 55%,var(--rose) 100%)}
 .datepill{display:inline-flex;align-items:center;gap:8px;padding:5px 11px;border-radius:999px;border:1px solid var(--line2);background:var(--panel2);font-size:12px;color:var(--muted);font-weight:600}
 .hero h1{margin:12px 0 4px;font-size:clamp(26px,3.4vw,38px);line-height:1.08;font-weight:800;letter-spacing:-.02em;text-wrap:balance}
 .hero h1 em{font-style:normal;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero p{margin:0;color:var(--muted);font-size:13.5px;max-width:62ch}
 .herostat{display:flex;gap:16px;align-items:stretch}
-.herostat .bar{width:4px;border-radius:4px;background:var(--amber)}
+.herostat .bar{width:4px;border-radius:4px;background:var(--rose)}
 .herostat .lbl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
 .herostat .big{font-size:clamp(30px,4vw,44px);font-weight:800;letter-spacing:-.02em;line-height:1.05}
 .herostat .of{font-size:12px;color:var(--muted)}
@@ -998,7 +998,7 @@ td .z{color:var(--faint)}
 <div class="app" id="app">
   <header class="topbar">
     <button class="iconbtn" id="menuBtn" aria-label="Minimizar menú"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-    <div class="brand"><span class="mark"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a8 8 0 0 0-8 8c0 5.4 8 12 8 12s8-6.6 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg></span><span>Argos<b>*</b>Vialidad</span></div>
+    <div class="brand"><span class="mark"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a8 8 0 0 0-8 8c0 5.4 8 12 8 12s8-6.6 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg></span><span>Argos<b>*Vialidad</b></span></div>
     <div class="spacer"></div>
     <span class="where">Vialidad y Movilidad Urbana · Torreón 2023</span>
     <button class="iconbtn" id="themeBtn" aria-label="Cambiar tema"></button>
