@@ -1265,7 +1265,7 @@ const MODS={
      {t:'table',span:12,title:'Registro detallado',cols:['fecha','hm','nombre','edad_n','direccion','grado','placas','marca_full','submarca','color','ubicacion','autoridad','remision','folio911','agentes']}
    ]}
 };
-const MOD_KEYS=Object.keys(MODS);
+const MOD_KEYS=Object.keys(MODS).filter(k=>k!=='bit').concat('bit');
 
 /* ---------- Estado */
 const S={mod:'general',from:0,to:364,preset:'all',f:{},metric:{},gran:{},pivot:{},page:{},mapColor:{},mapMode:{},gLayers:null,q:{},qm:{},geoMode:'cluster'};
