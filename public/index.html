@@ -696,7 +696,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
   --accent:#2bbfc1; --accent2:#3a8fd6; --amber:#f59e0b; --rose:#ee3f7c; --ok:#10b981;
   --chip:#0a969c; --chipbg:rgba(43,191,193,.13);
   --c1:#0a969c; --c2:#d81b60; --c3:#1d6fb8; --c4:#d97706; --c5:#8b5cf6; --c6:#059669; --c7:#ea580c; --cx:#64748b;
-  --seq0:#142033; --seq1:#2bbfc1; --fade:#263249;
+  --seq0:#142033; --seq1:#2bbfc1; --fade:#263249; --logobody:#d3d9e4;
   --shadow:0 10px 30px -12px rgba(0,0,0,.6);
   --font:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   color-scheme:dark;
@@ -707,7 +707,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
   --fg:#141a2a; --muted:#5a6375; --faint:#6f7889;
   --accent:#007a82; --accent2:#0e72b5; --amber:#d97706; --rose:#d81b60; --ok:#059669;
   --chip:#007a82; --chipbg:rgba(0,122,130,.09);
-  --seq0:#eef3f6; --seq1:#007a82; --fade:#dce4eb;
+  --seq0:#eef3f6; --seq1:#007a82; --fade:#dce4eb; --logobody:#2b3245;
   --shadow:0 10px 30px -18px rgba(15,23,42,.35);
   color-scheme:light;
 }}
@@ -717,7 +717,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
   --fg:#141a2a; --muted:#5a6375; --faint:#6f7889;
   --accent:#007a82; --accent2:#0e72b5; --amber:#d97706; --rose:#d81b60; --ok:#059669;
   --chip:#007a82; --chipbg:rgba(0,122,130,.09);
-  --seq0:#eef3f6; --seq1:#007a82; --fade:#dce4eb;
+  --seq0:#eef3f6; --seq1:#007a82; --fade:#dce4eb; --logobody:#2b3245;
   --shadow:0 10px 30px -18px rgba(15,23,42,.35);
   color-scheme:light;
 }
@@ -740,6 +740,8 @@ button{cursor:pointer}
 .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;letter-spacing:-.01em}
 .brand .mark{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
 .brand b{color:var(--rose)}
+.brand .logo{height:32px;width:auto;flex:none;display:block}
+.lg-a{fill:#12a19d}.lg-b{fill:#d81b60}.lg-c{fill:#1f6fb5}.lg-d{fill:var(--logobody)}
 .topbar .spacer{flex:1}
 .topbar .where{color:var(--muted);font-size:13px;font-weight:600}
 @media (max-width:640px){.topbar .where{display:none}}
@@ -998,7 +1000,7 @@ td .z{color:var(--faint)}
 <div class="app" id="app">
   <header class="topbar">
     <button class="iconbtn" id="menuBtn" aria-label="Minimizar menú"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-    <div class="brand"><span class="mark"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a8 8 0 0 0-8 8c0 5.4 8 12 8 12s8-6.6 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg></span><span>Argos<b>*Vialidad</b></span></div>
+    <div class="brand"><svg class="logo" viewBox="0 0 1247 864" role="img" aria-label="Argos"><g transform="translate(0,864) scale(0.1,-0.1)"><path class="lg-a" d="M4465 7116 c-156 -38 -278 -161 -314 -317 -7 -28 -11 -424 -11 -1099 0 -1143 -2 -1108 54 -1218 28 -56 115 -141 177 -172 93 -48 113 -50 644 -50 l500 0 251 253 c496 500 619 639 732 830 101 172 138 289 149 469 7 120 -4 211 -44 358 -45 169 -162 455 -315 773 l-91 187 -841 -1 c-624 0 -854 -4 -891 -13z"/><path class="lg-b" d="M6330 7127 c0 -2 34 -76 76 -163 175 -366 305 -705 340 -889 22 -119 22 -323 -1 -430 -22 -106 -84 -264 -138 -351 -122 -197 -254 -350 -614 -715 -167 -168 -303 -309 -303 -313 0 -4 177 -6 393 -3 350 4 403 7 491 26 421 89 786 335 1017 685 114 173 188 354 231 568 22 110 23 128 23 683 0 536 -1 573 -19 620 -45 119 -134 212 -248 258 -52 22 -63 22 -650 25 -329 2 -598 1 -598 -1z"/><path class="lg-c" d="M9006 6175 c-64 -23 -86 -45 -176 -177 -313 -462 -497 -1110 -459 -1614 35 -471 217 -851 540 -1130 105 -91 242 -198 535 -419 228 -172 440 -374 518 -493 163 -247 239 -495 239 -777 0 -162 -17 -272 -68 -431 -35 -108 -116 -269 -181 -360 -30 -41 -54 -77 -54 -79 0 -3 33 7 73 21 254 90 457 238 695 506 157 178 237 290 307 433 107 216 156 431 156 685 1 283 -58 519 -188 752 -123 222 -287 404 -597 662 -152 127 -349 307 -428 391 -211 225 -312 456 -325 741 -8 190 13 316 83 496 31 79 35 102 32 153 -7 120 -104 261 -335 486 -123 121 -145 139 -193 153 -65 19 -122 20 -174 1z"/><path class="lg-d" d="M2790 5623 c-108 -6 -317 -35 -435 -60 -996 -208 -1769 -940 -2009 -1899 -256 -1026 107 -2064 945 -2698 377 -285 841 -464 1309 -506 164 -14 6291 -14 6396 1 620 86 1049 668 949 1288 -40 242 -170 483 -352 652 -33 30 -212 171 -398 313 -187 143 -414 317 -505 386 -91 70 -257 197 -370 283 -113 86 -311 237 -440 336 -129 98 -237 177 -239 175 -2 -2 7 -21 21 -42 147 -222 163 -499 44 -773 -5 -12 3 -23 30 -40 72 -44 155 -120 208 -192 283 -379 222 -890 -142 -1179 -153 -121 -320 -179 -517 -179 -337 0 -621 182 -770 492 -85 178 -99 411 -36 599 18 52 43 115 57 139 13 24 23 46 21 47 -2 2 -797 4 -1768 5 -970 1 -1818 5 -1884 9 -500 34 -868 396 -926 912 -21 188 14 383 100 564 61 126 94 176 185 272 142 150 317 256 512 308 90 24 120 27 332 31 l232 6 -2 376 -3 376 -245 1 c-135 0 -270 -1 -300 -3z"/><path class="lg-b" d="M7210 2769 c-184 -24 -340 -181 -371 -375 -47 -290 219 -554 508 -506 297 49 463 357 338 629 -83 182 -265 279 -475 252z"/></g></svg><span>Argos<b>*Vialidad</b></span></div>
     <div class="spacer"></div>
     <span class="where">Vialidad y Movilidad Urbana · Torreón 2023</span>
     <button class="iconbtn" id="themeBtn" aria-label="Cambiar tema"></button>
