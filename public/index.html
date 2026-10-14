@@ -1628,11 +1628,11 @@ function renderGeneral(){
   TK=tok();memo.clear();disposeAll();
   const main=$('#main');
   const dr=k=>{const fe=DS[k].fecha;const out=[];for(let i=0;i<DS[k].n;i++)if(fe[i]>=S.from&&fe[i]<=S.to)out.push(i);return out};
-  const R={};let all=0;GEN.forEach(([k])=>{R[k]=dr(k);all+=R[k].length});
+  const R={};let all=0;GEN.forEach(([k])=>{R[k]=dr(k);if(k!=='bit')all+=R[k].length});
   const acc=DS.acc;let les=0,fal=0,at=0;const st=acc.dims.estatus;const atc=st.dict.indexOf('ATENDIDO');R.acc.forEach(i=>{les+=acc.vals.les[i];fal+=acc.vals.fal[i];if(st.c[i]===atc)at++});
   if(!S.gLayers)S.gLayers={acc:true,mal:true,cor:true,det:true};
   main.innerHTML=`<section class="card hero"><div><span class="datepill">${ic('cal',13)} <span id="rangeTxt"></span></span><h1>Vialidad y <em>movilidad urbana</em></h1><p>Indicadores operativos de la Dirección de Vialidad de Torreón: accidentes, servicios, bitácora, remisiones y detenciones.</p></div>
-   <div class="herostat"><svg class="spark" id="spark" viewBox="0 0 220 52" preserveAspectRatio="none" aria-hidden="true"></svg><div class="bar"></div><div><div class="lbl">Registros analizados</div><div class="big num">${fmt(all)}</div><div class="of">en 6 bases operativas</div></div></div></section>
+   <div class="herostat"><svg class="spark" id="spark" viewBox="0 0 220 52" preserveAspectRatio="none" aria-hidden="true"></svg><div class="bar"></div><div><div class="lbl">Registros analizados</div><div class="big num">${fmt(all)}</div><div class="of">en 5 bases operativas</div></div></div></section>
    ${filtersHTML('general')}
    <section class="card kpis"><div class="kpi"><div class="l">Accidentes viales</div><div class="v num">${fmt(R.acc.length)}</div><div class="s">${fmt(R.acc.length/(S.to-S.from+1))} por día</div></div>
     <div class="kpi"><div class="l">Atención de accidentes</div><div class="v num tone-accent">${pct(at,R.acc.length)}</div><div class="meter"><i style="width:${(at/(R.acc.length||1)*100).toFixed(1)}%"></i></div></div>
@@ -1648,7 +1648,7 @@ function renderGeneral(){
    </div>`;
   wireDates();
   // sparkline total
-  {const n=S.to-S.from+1,nb=Math.min(n,60),a=new Float64Array(nb);GEN.forEach(([k])=>{const fe=DS[k].fecha;R[k].forEach(i=>{a[Math.min(nb-1,Math.floor((fe[i]-S.from)/n*nb))]++})});
+  {const n=S.to-S.from+1,nb=Math.min(n,60),a=new Float64Array(nb);GEN.filter(([k])=>k!=='bit').forEach(([k])=>{const fe=DS[k].fecha;R[k].forEach(i=>{a[Math.min(nb-1,Math.floor((fe[i]-S.from)/n*nb))]++})});
    const mx=Math.max(1,...a);$('#spark').innerHTML=`<polyline points="${Array.from(a,(v,i)=>`${(i/(nb-1||1)*218+1).toFixed(1)},${(50-v/mx*46).toFixed(1)}`).join(' ')}" fill="none" stroke="var(--accent)" stroke-width="1.8" vector-effect="non-scaling-stroke"/>`}
   // mini barras por mes
   GEN.filter(([k])=>k!=='bit').forEach(([k])=>{const a=new Float64Array(12);const mc=DS[k].dims.mes.c;R[k].forEach(i=>a[mc[i]]++);const mx=Math.max(1,...a);const bw=240/12;
@@ -1657,7 +1657,7 @@ function renderGeneral(){
   {const o=createMap($('#g_map'));const groups=GEO_L.slice(0,4).map(([k])=>({k,idx:R[k],color:()=>LAYC(k)}));setPoints(o,groups,'cluster');
    $('#g_map_lg').innerHTML=GEO_L.slice(0,4).map(([k,l])=>`<span class="lgi static"><i style="background:${LAYC(k)}"></i>${l} <b class="num">${fmt(R[k].filter(i=>hasGeo(k,i)).length)}</b></span>`).join('')}
   // perfil horario
-  const HL=[['acc','Accidentes',TK.cat[1]],['eve','Eventos',TK.cat[2]],['bit','Bitácora',TK.cat[3]],['mal','Mal estacionados',TK.cat[5]],['det','Detenidos',TK.cat[4]]];
+  const HL=[['acc','Accidentes',TK.cat[1]],['eve','Eventos',TK.cat[2]],['mal','Mal estacionados',TK.cat[5]],['det','Detenidos',TK.cat[4]]];
   const ho=base();ho.tooltip.trigger='axis';ho.tooltip.valueFormatter=v=>v.toFixed(1)+'%';ho.grid={left:8,right:14,top:60,bottom:4,containLabel:true};
   ho.legend={top:0,left:0,textStyle:{color:TK.fg,fontSize:11},itemWidth:14,itemHeight:3,icon:'roundRect'};
   ho.xAxis=axisCat(HORAS.slice(0,24),{boundaryGap:false,axisLabel:{color:TK.muted,fontSize:10,interval:3}});ho.yAxis=axisVal({axisLabel:{color:TK.faint,fontSize:10.5,formatter:v=>v+'%'}});
