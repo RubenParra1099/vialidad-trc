@@ -1639,7 +1639,7 @@ function renderGeneral(){
     <div class="kpi"><div class="l">Lesionados</div><div class="v num tone-amber">${fmt(les)}</div><div class="s">En accidentes viales</div></div>
     <div class="kpi"><div class="l">Fallecidos</div><div class="v num tone-rose">${fmt(fal)}</div><div class="s">En accidentes viales</div></div>
     <div class="kpi"><div class="l">Detenidos</div><div class="v num">${fmt(R.det.length)}</div><div class="s">${fmt(R.cor.length)} vehículos al corralón</div></div></section>
-   <div class="tiles">${GEN.map(([k,l])=>`<button class="tile" data-mod="${k}" style="--tone:${MODS[k].tone}"><span class="h">${ic(MODS[k].icon,17)}${l}</span><span class="v num">${fmt(R[k].length)}</span><svg class="mb" viewBox="0 0 240 38" preserveAspectRatio="none" id="mb_${k}" aria-hidden="true"></svg><span class="s">${esc(MODS[k].sub)} · por mes</span><span class="go">Abrir módulo →</span></button>`).join('')}</div>
+   <div class="tiles">${GEN.filter(([k])=>k!=='bit').map(([k,l])=>`<button class="tile" data-mod="${k}" style="--tone:${MODS[k].tone}"><span class="h">${ic(MODS[k].icon,17)}${l}</span><span class="v num">${fmt(R[k].length)}</span><svg class="mb" viewBox="0 0 240 38" preserveAspectRatio="none" id="mb_${k}" aria-hidden="true"></svg><span class="s">${esc(MODS[k].sub)} · por mes</span><span class="go">Abrir módulo →</span></button>`).join('')}</div>
    <div class="grid">
     <section class="card cc s8"><div class="hd"><div><h3>${ic('map',16)}Mapa operativo integrado</h3><div class="sub">Clic en un punto para ver su ficha completa</div></div><div class="tools"><button class="linkbtn" data-mod="geo">${ic('map',13)} Abrir mapa completo</button></div></div><div class="mlegend" id="g_map_lg"></div><div class="lmap" id="g_map" style="height:460px"></div></section>
     <section class="card cc s4"><div class="hd"><div><h3>${ic('clock',16)}Perfil horario</h3><div class="sub">Porcentaje de cada base por hora del día</div></div></div><div class="ch" id="g_hour" style="height:460px"></div></section>
@@ -1651,7 +1651,7 @@ function renderGeneral(){
   {const n=S.to-S.from+1,nb=Math.min(n,60),a=new Float64Array(nb);GEN.forEach(([k])=>{const fe=DS[k].fecha;R[k].forEach(i=>{a[Math.min(nb-1,Math.floor((fe[i]-S.from)/n*nb))]++})});
    const mx=Math.max(1,...a);$('#spark').innerHTML=`<polyline points="${Array.from(a,(v,i)=>`${(i/(nb-1||1)*218+1).toFixed(1)},${(50-v/mx*46).toFixed(1)}`).join(' ')}" fill="none" stroke="var(--accent)" stroke-width="1.8" vector-effect="non-scaling-stroke"/>`}
   // mini barras por mes
-  GEN.forEach(([k])=>{const a=new Float64Array(12);const mc=DS[k].dims.mes.c;R[k].forEach(i=>a[mc[i]]++);const mx=Math.max(1,...a);const bw=240/12;
+  GEN.filter(([k])=>k!=='bit').forEach(([k])=>{const a=new Float64Array(12);const mc=DS[k].dims.mes.c;R[k].forEach(i=>a[mc[i]]++);const mx=Math.max(1,...a);const bw=240/12;
     $('#mb_'+k).innerHTML=Array.from(a,(v,i)=>`<rect x="${(i*bw+2).toFixed(1)}" y="${(38-v/mx*36).toFixed(1)}" width="${(bw-4).toFixed(1)}" height="${(v/mx*36).toFixed(1)}" rx="2" style="fill:${MODS[k].tone}" opacity="${v?0.9:0.2}"><title>${MESES[i]}: ${fmt(v)}</title></rect>`).join('')});
   // mapa integrado
   {const o=createMap($('#g_map'));const groups=GEO_L.slice(0,4).map(([k])=>({k,idx:R[k],color:()=>LAYC(k)}));setPoints(o,groups,'cluster');
