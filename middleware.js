@@ -23,6 +23,6 @@ export default function middleware(request) {
   }
   return new Response('Acceso restringido a personal autorizado.', {
     status: 401,
-    headers: { 'WWW-Authenticate': 'Basic realm="Vialidad TRC", charset="UTF-8"', 'Cache-Control': 'no-store' },
+    headers: { 'WWW-Authenticate': 'Basic realm="Argos Vialidad", charset="UTF-8"', 'Cache-Control': 'no-store' },
   });
 }
