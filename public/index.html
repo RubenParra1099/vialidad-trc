@@ -929,6 +929,10 @@ tbody tr:hover td{background:var(--panel2)}
 .leaflet-container a.leaflet-popup-close-button{color:var(--muted)}
 .leaflet-tooltip.road{background:var(--panel);color:var(--fg);border:1px solid var(--line2);font-size:11.5px;font-weight:700;box-shadow:none;border-radius:8px;padding:3px 8px}
 .leaflet-tooltip.road::before{display:none}
+.rlabels{position:absolute;left:0;top:0;z-index:450;pointer-events:none;transition:opacity .15s}
+.rn-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);background:var(--panel);color:var(--muted);border-radius:9px;padding:5px 10px;font:600 11.5px var(--font);box-shadow:0 2px 8px -4px rgba(0,0,0,.35);cursor:pointer}
+.rn-btn b{font-weight:800;font-size:12px;color:var(--faint)}
+.rn-btn.on{color:var(--fg)}.rn-btn.on b{color:var(--accent)}
 .dot i{display:block;width:12px;height:12px;border-radius:50%;border:2px solid var(--panel);box-shadow:0 0 0 1px rgba(0,0,0,.25)}
 .clu{background:color-mix(in oklab,var(--accent) 28%,transparent);border-radius:50%;display:grid!important;place-items:center}
 .clu span{display:grid;place-items:center;width:calc(100% - 8px);height:calc(100% - 8px);border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-weight:800;font-size:11.5px}
@@ -1839,6 +1843,80 @@ function roads(){
 const TRC=[[25.475,-103.485],[25.615,-103.315]];
 const LM=[],MM={};let GM=null;
 const lro=new ResizeObserver(es=>es.forEach(e=>{const o=LM.find(x=>x.el===e.target);if(o)o.map.invalidateSize()}));
+/* ---------- Nombres de vialidades sobre el mapa (canvas propio, sin teselas externas) */
+// Zoom mínimo por clase de vialidad: 0 = principales … 3 = calles locales
+const LBLZ=[11,13,14,15];
+const ABBR=[[/^Boulevard /,'Blvd. '],[/^Avenida /,'Av. '],[/^Calzada /,'Calz. '],[/^Prolongación /,'Prol. '],[/^Carretera /,'Carr. '],[/^Periférico /,'Perif. '],[/^Privada /,'Priv. '],[/^Calle /,'']];
+const shortRoad=n=>{for(const [r,t] of ABBR)if(r.test(n))return n.replace(r,t);return n};
+let RLP=null;
+function roadPieces(){
+  if(RLP)return RLP;
+  // une los tramos de una misma vialidad que comparten extremo, para tener líneas largas donde quepa el nombre
+  const groups=new Map();roads().named.forEach(([c,nm,pts])=>{const g=c+'|'+nm;if(!groups.has(g))groups.set(g,[]);groups.get(g).push(pts.slice())});
+  const key=p=>p[0].toFixed(5)+','+p[1].toFixed(5),chains=[];
+  groups.forEach((list,g)=>{const [c,nm]=[+g.slice(0,g.indexOf('|')),g.slice(g.indexOf('|')+1)];
+    while(list.length){let ch=list.pop(),grew=true;
+      while(grew){grew=false;
+        for(let i=0;i<list.length;i++){const q=list[i],hs=key(ch[0]),he=key(ch[ch.length-1]),qs=key(q[0]),qe=key(q[q.length-1]);
+          if(he===qs)ch=ch.concat(q.slice(1));else if(he===qe)ch=ch.concat(q.slice(0,-1).reverse());
+          else if(hs===qe)ch=q.concat(ch.slice(1));else if(hs===qs)ch=q.slice(1).reverse().concat(ch);else continue;
+          list.splice(i,1);grew=true;break}}
+      chains.push([c,nm,ch])}});
+  RLP=chains.map(([c,nm,pts])=>{let a=90,b=-90,x=180,y=-180,len=0;
+    pts.forEach(([la,ln],i)=>{a=Math.min(a,la);b=Math.max(b,la);x=Math.min(x,ln);y=Math.max(y,ln);if(i)len+=Math.hypot(la-pts[i-1][0],ln-pts[i-1][1])});
+    return {c,nm,txt:shortRoad(nm),pts,box:[a,x,b,y],len}}).sort((p,q)=>p.c-q.c||q.len-p.len);
+  return RLP;
+}
+function roadLabels(o){
+  const map=o.map,cv=document.createElement('canvas');cv.className='rlabels';o.el.appendChild(cv);
+  const ctx=cv.getContext('2d');let raf=0,zc=null,proj=new Map();
+  function draw(){
+    raf=0;const sz=map.getSize(),dpr=window.devicePixelRatio||1;
+    if(cv.width!==Math.round(sz.x*dpr)||cv.height!==Math.round(sz.y*dpr)){cv.width=Math.round(sz.x*dpr);cv.height=Math.round(sz.y*dpr);cv.style.width=sz.x+'px';cv.style.height=sz.y+'px'}
+    ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,sz.x,sz.y);
+    const z=map.getZoom();if(S.roadNames===false||z<LBLZ[0])return;
+    if(zc!==z){zc=z;proj=new Map()}
+    const st=getComputedStyle(o.el),fg=st.getPropertyValue('--fg').trim(),halo=st.getPropertyValue('--mapbg').trim(),font=getComputedStyle(document.body).fontFamily;
+    const bd=map.getBounds().pad(.15),S0=bd.getSouth(),N0=bd.getNorth(),W0=bd.getWest(),E0=bd.getEast(),org=map.getPixelBounds().min;
+    const placed=[],seen={};ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineJoin='round';
+    RLP=roadPieces();
+    for(let pi=0;pi<RLP.length;pi++){const P=RLP[pi];
+      if(z<LBLZ[P.c])continue;const [a,x,b,y]=P.box;if(b<S0||a>N0||y<W0||x>E0)continue;
+      let ab=proj.get(pi);if(!ab){ab=P.pts.map(ll=>map.project(ll,z));proj.set(pi,ab)}
+      const pt=ab.map(q=>[q.x-org.x,q.y-org.y]);const cum=[0];for(let i=1;i<pt.length;i++)cum.push(cum[i-1]+Math.hypot(pt[i][0]-pt[i-1][0],pt[i][1]-pt[i-1][1]));
+      const tot=cum[cum.length-1];
+      ctx.font=`${P.c===0?700:600} ${P.c===0?11.5:P.c===1?11:10.5}px ${font}`;const w=ctx.measureText(P.txt).width+10;if(tot<w+6)continue;
+      const at=d=>{let i=1;while(i<cum.length-1&&cum[i]<d)i++;const t=(d-cum[i-1])/((cum[i]-cum[i-1])||1);return [pt[i-1][0]+(pt[i][0]-pt[i-1][0])*t,pt[i-1][1]+(pt[i][1]-pt[i-1][1])*t,i]};
+      const cand=[tot/2];for(let k=1;k<6;k++){cand.push(tot/2-k*380,tot/2+k*380)}
+      for(const d of cand){
+        if(d<w/2||d>tot-w/2)continue;
+        const A=at(d-w/2),B=at(d+w/2),mx=(A[0]+B[0])/2,my=(A[1]+B[1])/2;
+        if(mx<10||my<10||mx>sz.x-10||my>sz.y-10)continue;
+        // tramo casi recto: ningún vértice intermedio se aleja más de 4 px de la cuerda
+        const dx=B[0]-A[0],dy=B[1]-A[1],L2=Math.hypot(dx,dy)||1;let ok=L2>w*.85;
+        for(let i=A[2];ok&&i<B[2];i++){if(Math.abs((pt[i][0]-A[0])*dy-(pt[i][1]-A[1])*dx)/L2>4)ok=false}
+        if(!ok)continue;
+        if((seen[P.nm]||[]).some(([u,v])=>Math.hypot(u-mx,v-my)<320))continue;
+        const n=Math.max(2,Math.ceil(w/16)),circ=[];for(let j=0;j<n;j++){const t=j/(n-1);circ.push([A[0]+dx*t,A[1]+dy*t])}
+        if(circ.some(([u,v])=>placed.some(([p2,q2])=>Math.hypot(u-p2,v-q2)<17)))continue;
+        placed.push(...circ);(seen[P.nm]=seen[P.nm]||[]).push([mx,my]);
+        let ang=Math.atan2(dy,dx);if(ang>Math.PI/2)ang-=Math.PI;else if(ang<-Math.PI/2)ang+=Math.PI;
+        ctx.save();ctx.translate(mx,my);ctx.rotate(ang);ctx.lineWidth=3.5;ctx.strokeStyle=halo;ctx.strokeText(P.txt,0,.5);ctx.fillStyle=fg;ctx.globalAlpha=P.c===0?.92:.8;ctx.fillText(P.txt,0,.5);ctx.restore();
+      }
+    }
+  }
+  const later=()=>{if(!raf)raf=requestAnimationFrame(draw)};
+  map.on('move resize viewreset',later);
+  map.on('zoomstart',()=>{cv.style.opacity=0});map.on('zoomend',()=>{draw();cv.style.opacity=1});
+  later();return {draw:later};
+}
+// Botón en el mapa para mostrar u ocultar los nombres
+const RoadNamesCtl=L.Control.extend({options:{position:'topright'},onAdd(){
+  const b=L.DomUtil.create('button','rn-btn');b.type='button';
+  const paint=()=>{const on=S.roadNames!==false;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on);b.title=on?'Ocultar nombres de calles':'Mostrar nombres de calles';b.innerHTML='<b>Aa</b> Nombres de calles'};
+  paint();L.DomEvent.disableClickPropagation(b);
+  b.onclick=()=>{S.roadNames=S.roadNames===false;LM.forEach(m=>{m.labels.draw();const x=m.el.querySelector('.rn-btn');if(x&&x!==b)x.dispatchEvent(new Event('repaint'))});paint()};
+  b.addEventListener('repaint',paint);return b}});
 function createMap(el){
   const map=L.map(el,{preferCanvas:true,zoomSnap:.5,minZoom:11,maxZoom:19});
   map.attributionControl.setPrefix(false);map.attributionControl.addAttribution('Red vial © colaboradores de OpenStreetMap');
@@ -1852,6 +1930,7 @@ function createMap(el){
   R.named.forEach(([c,nm,pts])=>L.polyline(pts,{renderer:nr,opacity:0,weight:9,interactive:true}).bindTooltip(nm,{sticky:true,className:'road',direction:'top',offset:[0,-8]}).addTo(map));
   map.fitBounds(TRC);scaleW();
   const o={el,map,layer:null,rend:L.canvas({padding:.3}),index:new Map(),mode:'cluster'};
+  o.labels=roadLabels(o);new RoadNamesCtl().addTo(map);
   LM.push(o);lro.observe(el);return o;
 }
 const ICONS={};
