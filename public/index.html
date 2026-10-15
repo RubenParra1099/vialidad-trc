@@ -873,6 +873,12 @@ main{min-width:0;padding-block:22px 40px;padding-left:max(16px,env(safe-area-ins
 .minis button{border:0;background:transparent;padding:3px 9px;border-radius:7px;font-size:11.5px;font-weight:700;color:var(--muted)}
 .minis button.on{background:var(--chipbg);color:var(--accent)}
 .ch{width:100%;min-height:260px}
+.modhd{grid-column:1/-1;display:flex;align-items:center;gap:12px;margin-top:14px;padding:0 4px 2px;border-bottom:1px solid var(--line)}
+.modhd .ico{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;color:var(--tone);background:color-mix(in srgb,var(--tone) 14%,transparent);flex:none}
+.modhd h2{margin:0;font-size:17px;font-weight:800}
+.modhd .sub{font-size:12px;color:var(--muted);margin:2px 0 10px}
+.modhd .sub b{color:var(--fg)}
+.modhd .linkbtn{margin-left:auto;flex:none}
 .hint{font-size:11px;color:var(--faint)}
 
 /* pivot + table */
@@ -1662,6 +1668,8 @@ function renderGeneral(){
     <section class="card cc s4"><div class="hd"><div><h3>${ic('clock',16)}Perfil horario</h3><div class="sub">Porcentaje de cada base por hora del día</div></div></div><div class="ch" id="g_hour" style="height:460px"></div></section>
     <section class="card cc s6"><div class="hd"><div><h3>${ic('pin',16)}Carga por sector</h3><div class="sub">Registros por sector en las bases con sector</div></div></div><div class="ch" id="g_sec" style="height:360px"></div></section>
     <section class="card cc s6"><div class="hd"><div><h3>${ic('crash',16)}Severidad mensual de accidentes</h3><div class="sub">Lesionados y fallecidos por mes</div></div></div><div class="ch" id="g_sev" style="height:360px"></div></section>
+    ${GEN.map(([k,l])=>`<div class="modhd" style="--tone:${MODS[k].tone}"><span class="ico">${ic(MODS[k].icon,17)}</span><div><h2>${esc(l)}</h2><div class="sub"><b class="num">${fmt(R[k].length)}</b> ${esc(MODS[k].noun)} · ${esc(MODS[k].sub)}</div></div><button class="linkbtn" data-mod="${k}">Abrir módulo →</button></div>
+     ${GMOD[k].map((g,i)=>`<section class="card cc s4"><div class="hd"><div><h3>${ic(g.t==='donut'?'pie':'chart',16)}${esc(g.title)}</h3><div class="sub">Clic para abrir el módulo filtrado</div></div></div><div class="ch" id="gm_${k}_${i}" style="height:300px"></div></section>`).join('')}`).join('')}
    </div>`;
   wireDates();
   // sparkline total
@@ -1696,6 +1704,51 @@ function renderGeneral(){
   vo.series=[{name:'Lesionados',type:'bar',stack:'s',barMaxWidth:30,itemStyle:{color:TK.amber},data:Array.from(sl),label:{show:false}},
     {name:'Fallecidos',type:'bar',stack:'s',barMaxWidth:30,itemStyle:{color:TK.rose,borderRadius:[4,4,0,0]},data:Array.from(sf),label:{show:true,position:'top',color:TK.muted,fontSize:10.5,formatter:p=>{const t=sl[p.dataIndex]+sf[p.dataIndex];return t?fmt(t):''}}}];
   mount('g_sev',()=>vo).inst.setOption(vo);
+  // gráficas por módulo
+  GEN.forEach(([k])=>GMOD[k].forEach((g,i)=>{
+    const o=g.t==='donut'?genDonut(k,g,R[k]):genBar(k,g,R[k]);
+    const c=mount('gm_'+k+'_'+i,()=>o,p=>{const code=p.data&&p.data.code;if(code==null||code<0)return;setCodes(k,g.dim,[code]);S.page[k]=0;go(k)});
+    if(c)c.inst.setOption(o);
+  }));
+}
+/* gráficas de cada módulo en el panel general (solo rango de fechas) */
+const GMOD={
+  acc:[{t:'donut',dim:'tipo',title:'Tipo de accidente'},{t:'hbar',dim:'causa',top:8,title:'Causas principales',hide:['SIN DATO','CORTE CIRCULACION']},{t:'bar',dim:'edad',title:'Edad del conductor',hide:['SIN DATO']}],
+  eve:[{t:'hbar',dim:'accion',top:8,title:'Acciones principales'},{t:'hbar',dim:'dependencia',top:8,title:'Dependencia apoyada'},{t:'donut',dim:'origen',title:'Origen'}],
+  bit:[{t:'hbar',dim:'clave',top:8,title:'Claves / razonamiento'},{t:'hbar',dim:'unidad',top:8,title:'Unidades más activas',hide:['SIN DATO']},{t:'donut',dim:'grupo',title:'Grupo'}],
+  cor:[{t:'donut',dim:'tipo',title:'Tipo de vehículo'},{t:'hbar',dim:'marca',top:8,title:'Marcas principales',hide:['OTROS','SIN DATO']},{t:'bar',dim:'modelo',title:'Antigüedad del vehículo',hide:['SIN DATO']}],
+  mal:[{t:'donut',dim:'evento',title:'Tipo de evento'},{t:'hbar',dim:'colonia',top:8,title:'Colonias con más reportes',hide:['SIN DATO','OTROS']},{t:'donut',dim:'estatus',title:'Estatus de atención'}],
+  det:[{t:'donut',dim:'etilico',title:'Grado etílico'},{t:'bar',dim:'edad',title:'Edad',hide:['SIN DATO']},{t:'donut',dim:'autoridad',title:'Autoridad'}]
+};
+function genItems(k,g,idx){
+  const dm=DS[k].dims[g.dim];if(!dm)return {dm:{dict:[],col:[]},it:[]};
+  const a=new Float64Array(dm.dict.length);for(const i of idx)a[dm.c[i]]++;
+  let it=dm.dict.map((name,code)=>({name,code,v:a[code]})).filter(x=>!(g.hide||[]).includes(x.name));
+  const ord=ORDER[g.dim];if(ord)it.sort((x,y)=>ord.indexOf(x.name)-ord.indexOf(y.name));else it=it.filter(x=>x.v>0).sort((x,y)=>y.v-x.v);
+  if(g.top)it=it.slice(0,g.top);
+  return {dm,it};
+}
+function genBar(k,g,idx){
+  const {it}=genItems(k,g,idx);const hz=g.t==='hbar';const col=LAYC(k);
+  const names=it.map(x=>ORDER[g.dim]?x.name:title(x.name));
+  const o=base();o.tooltip.trigger='item';o.tooltip.formatter=p=>`<b>${esc(names[p.dataIndex])}</b><br>${esc(MODS[k].noun)}: <b>${fmt(p.value)}</b>`;
+  o.series=[{type:'bar',barMaxWidth:hz?14:30,barCategoryGap:'28%',cursor:'pointer',label:{show:true,position:hz?'right':'top',color:TK.muted,fontSize:10.5,formatter:p=>p.value?fmt(p.value):''},
+    data:it.map(x=>({value:x.v,code:x.code,itemStyle:{color:col,borderRadius:hz?[0,4,4,0]:[4,4,0,0]}}))}];
+  if(hz){o.grid={left:8,right:44,top:4,bottom:4,containLabel:true};o.yAxis=axisCat(names,{inverse:true,axisLabel:{color:TK.fg,fontSize:11,width:140,overflow:'truncate'}});o.xAxis=axisVal({splitLine:{show:false},axisLabel:{show:false}})}
+  else{o.grid={left:8,right:8,top:22,bottom:4,containLabel:true};o.xAxis=axisCat(names,{axisLabel:{color:TK.muted,fontSize:11,interval:0,rotate:names.length>4?30:0,width:80,overflow:'truncate'}});o.yAxis=axisVal({max:v=>Math.ceil(v.max*1.12)||1})}
+  return o;
+}
+function genDonut(k,g,idx){
+  const {dm,it}=genItems(k,g,idx);const main=[],rest={v:0,code:-1};
+  [...it].sort((a,b)=>b.v-a.v).forEach(x=>{const j=dm.col[x.code];if(main.length<6&&j>=0&&j<7&&x.v>0)main.push(x);else rest.v+=x.v});
+  const parts=main.concat(rest.v>0?[rest]:[]);const tot=parts.reduce((a,b)=>a+b.v,0);const nm=x=>x.code<0?'Otros / sin dato':(ORDER[g.dim]?x.name:title(x.name));
+  const o=base();o.tooltip.trigger='item';o.tooltip.formatter=p=>`<b>${esc(p.name)}</b><br>${esc(MODS[k].noun)}: <b>${fmt(p.value)}</b> · ${pct(p.value,tot)}`;
+  o.legend={left:'center',bottom:0,itemGap:8,itemWidth:9,itemHeight:9,icon:'roundRect',selectedMode:false,textStyle:{color:TK.fg,fontSize:10.5},
+    formatter:n=>{const p=parts.find(x=>nm(x)===n);return `${n.length>18?n.slice(0,17)+'…':n} ${p?pct(p.v,tot,0):''}`}};
+  o.title={text:fmt(tot),subtext:MODS[k].noun,left:'center',top:'30%',textAlign:'center',textStyle:{color:TK.fg,fontSize:18,fontWeight:800,fontFamily:TK.font},subtextStyle:{color:TK.muted,fontSize:10.5},itemGap:2};
+  o.series=[{type:'pie',radius:['40%','58%'],center:['50%','38%'],label:{show:false},padAngle:1.2,cursor:'pointer',itemStyle:{borderRadius:4,borderColor:TK.panel,borderWidth:2},
+    data:parts.map(x=>({name:nm(x),value:x.v,code:x.code,itemStyle:{color:x.code<0?TK.cx:colorOf(dm,x.code)}}))}];
+  return o;
 }
 
 
