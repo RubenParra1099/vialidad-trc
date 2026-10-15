@@ -805,6 +805,10 @@ main{min-width:0;padding-block:22px 40px;padding-left:max(16px,env(safe-area-ins
 .seg button{padding:5px 11px;border-radius:9px;border:1px solid transparent;background:var(--panel2);font-size:12px;font-weight:700;color:var(--muted)}
 .seg button:hover{color:var(--fg)}
 .seg button.on{background:var(--fg);color:var(--bg)}
+.segsel{padding:5px 8px;border-radius:9px;border:1px solid transparent;background:var(--panel2);font:700 12px var(--font);color:var(--muted);cursor:pointer}
+.segsel:hover{color:var(--fg)}
+.segsel.on{background:var(--fg);color:var(--bg)}
+.segsel option{background:var(--panel);color:var(--fg);font-weight:600}
 .dates{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12px;color:var(--muted);font-weight:600}
 .dates input{background:var(--panel2);border:1px solid var(--line2);border-radius:9px;padding:5px 8px;font-size:12.5px}
 .frows{border:1px solid var(--line);border-radius:12px;overflow:hidden}
@@ -1590,7 +1594,7 @@ function filtersHTML(k){
   const metr=k!=='general'&&m.metrics.length>1?`<div class="metricbar"><span class="lab" style="display:flex;gap:6px;align-items:center;color:var(--muted);font-size:12px;font-weight:600">${ic('chart',14)} Medir por</span><div class="seg">${m.metrics.map(([v,l])=>`<button data-metric="${v}" class="${S.metric[k]===v?'on':''}">${l}</button>`).join('')}</div></div>`:'';
   const rowsH=k==='general'?'':`<div class="lgrid">${m.groups.map(([g,icn,dims])=>`<div class="lcard" style="--tone:${m.tone}"><div class="lhd">${ic(icn,15)}<span>${g}</span></div><div class="lpills">${dims.map(d=>`<button class="pill" data-dim="${d}" id="pill_${d}">${LBL[d]} ${ic('down',13)}</button>`).join('')}</div></div>`).join('')}</div>`;
   return `<section class="card filters">
-   <div class="rangebar"><span class="lab">${ic('cal',14)} Rango:</span><div class="seg" id="presets">${[['all','Todo 2023'],['q1','T1'],['q2','T2'],['q3','T3'],['q4','T4'],['h1','1er semestre'],['h2','2do semestre']].map(([v,l])=>`<button data-preset="${v}">${l}</button>`).join('')}</div>
+   <div class="rangebar"><span class="lab">${ic('cal',14)} Rango:</span><div class="seg" id="presets">${[['all','Todo 2023'],['q1','T1'],['q2','T2'],['q3','T3'],['q4','T4'],['h1','1er semestre'],['h2','2do semestre']].map(([v,l])=>`<button data-preset="${v}">${l}</button>`).join('')}${monthSel()}</div>
     <div class="dates"><label for="dFrom">Desde</label><input type="date" id="dFrom" min="2023-01-01" max="2023-12-31"><label for="dTo">Hasta</label><input type="date" id="dTo" min="2023-01-01" max="2023-12-31"></div></div>
    ${k==='general'?'':`<div class="searchbar">${ic('filter',15)}<input type="search" id="q_${k}" placeholder="Buscar en todos los campos: nombre, placa, serie, folio, domicilio, agente, unidad…" value="${esc(S.q[k]||'')}" autocomplete="off" aria-label="Buscar"></div>`}
    ${metr}${rowsH}
@@ -1643,13 +1647,17 @@ function periodCtl(){
   return `<div class="mperiod">${ic('cal',13)}<select data-period aria-label="Periodo">${PGRUPOS.map(([g,ops])=>`<optgroup label="${g}">${ops.map(([v,l])=>`<option value="${v}" ${v===p?'selected':''}>${l}</option>`).join('')}</optgroup>`).join('')}<option value="custom" ${p==='custom'?'selected':''} hidden>Personalizado</option></select>
     <input type="date" data-pfrom min="2023-01-01" max="2023-12-31" value="${dIso(S.from)}" aria-label="Desde"><span>–</span><input type="date" data-pto min="2023-01-01" max="2023-12-31" value="${dIso(S.to)}" aria-label="Hasta"></div>`;
 }
+// selector de mes de la barra de rango; se marca como los botones cuando el periodo es un mes
+function monthSel(){const on=/^m[0-9]+$/.test(S.preset);
+  return `<select class="segsel${on?' on':''}" data-month aria-label="Mes"><option value="" ${on?'':'selected'}>Mes…</option>${MESES_L.map((l,m)=>`<option value="m${m}" ${S.preset==='m'+m?'selected':''}>${l}</option>`).join('')}</select>`}
 function setRange(a,b,preset){S.from=Math.max(0,Math.min(a,b));S.to=Math.min(364,Math.max(a,b));S.preset=preset;for(const k in S.page)S.page[k]=0;refreshDates();S.mod==='general'?render():refresh()}
 document.addEventListener('change',e=>{
-  const s=e.target.closest('[data-period]');if(s){const r=PRESETS[s.value];if(r)setRange(r[0],r[1],s.value);return}
+  const s=e.target.closest('[data-period],[data-month]');if(s){const r=PRESETS[s.value];if(r)setRange(r[0],r[1],s.value);return}
   const d=e.target.closest('[data-pfrom],[data-pto]');if(!d)return;const box=d.closest('.mperiod'),day=v=>Math.round((Date.parse(v+'T00:00:00Z')-DAY0)/864e5);
   const a=day(box.querySelector('[data-pfrom]').value),b=day(box.querySelector('[data-pto]').value);if(!isNaN(a)&&!isNaN(b))setRange(a,b,'custom');
 });
 function paintPeriods(){
+  document.querySelectorAll('[data-month]').forEach(m=>{const on=/^m[0-9]+$/.test(S.preset);m.value=on?S.preset:'';m.classList.toggle('on',on)});
   document.querySelectorAll('.mperiod').forEach(box=>{box.querySelector('[data-period]').value=PRESETS[S.preset]?S.preset:'custom';box.querySelector('[data-pfrom]').value=dIso(S.from);box.querySelector('[data-pto]').value=dIso(S.to)});
   const w=document.querySelector('.fullmap .topbar .where');if(w&&MODS[S.mod])w.textContent=MODS[S.mod].title+' · '+dLong(S.from)+' – '+dLong(S.to);
 }
@@ -2063,7 +2071,7 @@ function renderGeo(){
   main.innerHTML=`<section class="card hero"><div><span class="datepill">${ic('cal',13)} <span id="rangeTxt"></span></span><h1>Mapa <em>georreferenciado</em></h1><p>Todos los módulos sobre la red vial de Torreón. Accidentes, mal estacionados, corralón y detenidos usan sus coordenadas; eventos y apoyos se ubican a partir del domicilio registrado.</p></div>
    <div class="herostat"><svg class="spark" id="spark" viewBox="0 0 220 52" preserveAspectRatio="none" aria-hidden="true"></svg><div class="bar"></div><div><div class="lbl">Puntos en el mapa</div><div class="big num" id="heroBig"></div><div class="of num" id="heroOf"></div></div></div></section>
    <section class="card filters">
-    <div class="rangebar"><span class="lab">${ic('cal',14)} Rango:</span><div class="seg" id="presets">${[['all','Todo 2023'],['q1','T1'],['q2','T2'],['q3','T3'],['q4','T4'],['h1','1er semestre'],['h2','2do semestre']].map(([v,l])=>`<button data-preset="${v}">${l}</button>`).join('')}</div>
+    <div class="rangebar"><span class="lab">${ic('cal',14)} Rango:</span><div class="seg" id="presets">${[['all','Todo 2023'],['q1','T1'],['q2','T2'],['q3','T3'],['q4','T4'],['h1','1er semestre'],['h2','2do semestre']].map(([v,l])=>`<button data-preset="${v}">${l}</button>`).join('')}${monthSel()}</div>
      <div class="dates"><label for="dFrom">Desde</label><input type="date" id="dFrom" min="2023-01-01" max="2023-12-31"><label for="dTo">Hasta</label><input type="date" id="dTo" min="2023-01-01" max="2023-12-31"></div></div>
     <div class="searchbar">${ic('filter',15)}<input type="search" id="q_geo" placeholder="Buscar en todas las capas: nombre, placa, serie, domicilio, colonia, agente…" value="${esc(S.q.acc||'')}" autocomplete="off" aria-label="Buscar"></div>
     <div class="activebar"><span class="ttl">Filtros seleccionados</span><span class="showing">Filtra capas y conceptos desde la barra lateral del mapa · se comparten con cada módulo</span><div class="chips" id="chips"></div></div>
