@@ -47,6 +47,32 @@ git add public/data/omega.json && git commit -m "Actualiza datos" && git push
 
 El Excel no se sube al repositorio (`.gitignore` lo excluye).
 
+## Base de datos (PostgreSQL / Neon)
+
+Los CSV exportados del Excel (`omega 2023.csv` … `omega 2023 6.csv`, una hoja por archivo) se cargan en el esquema `vialidad`:
+
+| Tabla | Hoja |
+|---|---|
+| `vialidad.accidentes_viales` | accidentes viales |
+| `vialidad.eventos_apoyos` | eventos y apoyos |
+| `vialidad.bitacora` | bitácora |
+| `vialidad.vehiculos_corralon` | vehículos al corralón |
+| `vialidad.mal_estacionados` | vehículos mal estacionados |
+| `vialidad.detenidos` | detenidos |
+
+Las columnas conservan el texto del CSV; `fecha` y `hora` se guardan como `date`/`time`, los conteos y edades como números, y la georreferenciación se separa además en `latitud`/`longitud`. Si alguna celda no se pudo convertir, el valor original queda en `<columna>_texto`. Cada columna lleva como comentario su encabezado original.
+
+```bash
+npm install
+cp .env.example .env        # pega la cadena de conexión de Neon en DATABASE_URL
+npm run db:revisar -- "ruta/a/la/carpeta/con/los/csv"   # solo revisa, no escribe
+npm run db:migrar -- "ruta/a/la/carpeta/con/los/csv"    # borra y vuelve a crear las tablas
+```
+
+Para verlas en TablePlus: **Create a new connection → PostgreSQL → Import from URL** con la misma cadena de `DATABASE_URL`, y elige el esquema `vialidad`. En Neon Console están en **Tables** (selecciona el esquema `vialidad`).
+
+La plataforma sigue leyendo `public/data/omega.json`; la base de datos es, por ahora, una copia consultable de los datos originales.
+
 ## Probar localmente
 
 ```bash
