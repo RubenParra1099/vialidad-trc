@@ -1483,7 +1483,7 @@ function chartCard(k,ch,i){
   if(ch.t==='map'){const cur=S.mapColor[k]||ch.colorBy[0];const md=S.mapMode[k]||'cluster';tools=`<div class="minis">${MAPMODES.map(([v,l])=>`<button data-mapmode="${v}" class="${md===v?'on':''}">${l}</button>`).join('')}</div><select id="mapcolor_${k}" aria-label="Color por" ${md==='heat'?'disabled':''}>${ch.colorBy.map(d=>`<option value="${d}" ${d===cur?'selected':''}>Color: ${LBL[d]}</option>`).join('')}</select>`}
   if(ch.t==='pivot'){const pv=S.pivot[k]||{r:ch.rows,c:ch.cols};const opts=v=>pivotDims(k).map(d=>`<option value="${d}" ${d===v?'selected':''}>${LBL[d]}</option>`).join('');
     tools=`<select id="pvr_${k}" aria-label="Filas">${opts(pv.r)}</select><span class="hint">×</span><select id="pvc_${k}" aria-label="Columnas">${opts(pv.c)}</select>`}
-  const sub=ch.sub||(ch.t==='hbar'||ch.t==='bar'||ch.t==='donut'?'Clic para filtrar':ch.t==='pivot'?'Clic en una celda para filtrar ambas dimensiones':ch.t==='table'?'Registros que cumplen los filtros · escribe en la fila de filtros de cada columna · clic en una fila para ver la ficha':ch.t==='people'?'Conductores y vehículos de los accidentes filtrados · busca por nombre, placa o teléfono':ch.t==='map'?'Clic en un punto para ver la ficha · clic en la leyenda para filtrar':'');
+  const sub=ch.sub||(ch.t==='hbar'||ch.t==='bar'||ch.t==='donut'?'Clic para filtrar':ch.t==='pivot'?'Clic en una celda para filtrar ambas dimensiones':ch.t==='table'?'Registros que cumplen los filtros · escribe en la fila de filtros de cada columna · clic en una fila para ver la ficha':ch.t==='people'?'Conductores y vehículos de los accidentes filtrados · busca por nombre, placa o teléfono':ch.t==='map'?'Clic en un punto para ver la ficha · clic en la leyenda para activar o desactivar conceptos':'');
   const body=ch.t==='pivot'?`<div class="tw" id="${id}"></div>`:(ch.t==='table'||ch.t==='people')?`<div id="${id}"></div>`:ch.t==='map'?`<div class="mlegend" id="${id}_lg"></div><div class="lmap" id="${id}" style="height:${h}px"></div>`:`<div class="ch" id="${id}" style="height:${h}px"></div>`;
   return `<section class="card cc s${ch.span}" data-ci="${i}"><div class="hd"><div><h3>${ic(icn,16)}${esc(ch.title)}</h3><div class="sub">${esc(sub)}</div></div><div class="tools">${tools}</div></div>${body}</section>`;
 }
@@ -1668,7 +1668,7 @@ function renderGeneral(){
     <section class="card cc s4"><div class="hd"><div><h3>${ic('clock',16)}Perfil horario</h3><div class="sub">Porcentaje de cada base por hora del día</div></div></div><div class="ch" id="g_hour" style="height:460px"></div></section>
     <section class="card cc s6"><div class="hd"><div><h3>${ic('pin',16)}Carga por sector</h3><div class="sub">Registros por sector en las bases con sector</div></div></div><div class="ch" id="g_sec" style="height:360px"></div></section>
     <section class="card cc s6"><div class="hd"><div><h3>${ic('crash',16)}Severidad mensual de accidentes</h3><div class="sub">Lesionados y fallecidos por mes</div></div></div><div class="ch" id="g_sev" style="height:360px"></div></section>
-    ${GEN.map(([k,l])=>`<div class="modhd" style="--tone:${MODS[k].tone}"><span class="ico">${ic(MODS[k].icon,17)}</span><div><h2>${esc(l)}</h2><div class="sub"><b class="num">${fmt(R[k].length)}</b> ${esc(MODS[k].noun)} · ${esc(MODS[k].sub)}</div></div><button class="linkbtn" data-mod="${k}">Abrir módulo →</button></div>
+    ${GEN.filter(([k])=>k!=='bit').map(([k,l])=>`<div class="modhd" style="--tone:${MODS[k].tone}"><span class="ico">${ic(MODS[k].icon,17)}</span><div><h2>${esc(l)}</h2><div class="sub"><b class="num">${fmt(R[k].length)}</b> ${esc(MODS[k].noun)} · ${esc(MODS[k].sub)}</div></div><button class="linkbtn" data-mod="${k}">Abrir módulo →</button></div>
      ${GMOD[k].map((g,i)=>`<section class="card cc s4"><div class="hd"><div><h3>${ic(g.t==='donut'?'pie':'chart',16)}${esc(g.title)}</h3><div class="sub">Clic para abrir el módulo filtrado</div></div></div><div class="ch" id="gm_${k}_${i}" style="height:300px"></div></section>`).join('')}`).join('')}
    </div>`;
   wireDates();
@@ -1679,8 +1679,11 @@ function renderGeneral(){
   GEN.filter(([k])=>k!=='bit').forEach(([k])=>{const a=new Float64Array(12);const mc=DS[k].dims.mes.c;R[k].forEach(i=>a[mc[i]]++);const mx=Math.max(1,...a);const bw=240/12;
     $('#mb_'+k).innerHTML=Array.from(a,(v,i)=>`<rect x="${(i*bw+2).toFixed(1)}" y="${(38-v/mx*36).toFixed(1)}" width="${(bw-4).toFixed(1)}" height="${(v/mx*36).toFixed(1)}" rx="2" style="fill:${MODS[k].tone}" opacity="${v?0.9:0.2}"><title>${MESES[i]}: ${fmt(v)}</title></rect>`).join('')});
   // mapa integrado
-  {const o=createMap($('#g_map'));const groups=GEO_L.slice(0,4).map(([k])=>({k,idx:R[k],color:()=>LAYC(k)}));setPoints(o,groups,'cluster');
-   $('#g_map_lg').innerHTML=GEO_L.slice(0,4).map(([k,l])=>`<span class="lgi static"><i style="background:${LAYC(k)}"></i>${l} <b class="num">${fmt(R[k].filter(i=>hasGeo(k,i)).length)}</b></span>`).join('')}
+  {const o=createMap($('#g_map'));const L4=GEO_L.slice(0,4);
+   const draw=()=>{setPoints(o,L4.filter(([k])=>S.gLayers[k]).map(([k])=>({k,idx:R[k],color:()=>LAYC(k)})),'cluster');
+     const lg=$('#g_map_lg');lg.innerHTML=L4.map(([k,l])=>`<button class="lgi${S.gLayers[k]?'':' off'}" data-glay="${k}" aria-pressed="${!!S.gLayers[k]}" title="Clic para ${S.gLayers[k]?'ocultar':'mostrar'}"><i style="background:${LAYC(k)}"></i>${l} <b class="num">${fmt(R[k].filter(i=>hasGeo(k,i)).length)}</b></button>`).join('')+'<span class="lgn">Clic para activar o desactivar</span>';
+     lg.querySelectorAll('[data-glay]').forEach(b=>b.onclick=()=>{S.gLayers[b.dataset.glay]=!S.gLayers[b.dataset.glay];draw()})};
+   draw()}
   // perfil horario
   const HL=[['acc','Accidentes',TK.cat[1]],['eve','Eventos',TK.cat[2]],['mal','Mal estacionados',TK.cat[5]],['det','Detenidos',TK.cat[4]]];
   const ho=base();ho.tooltip.trigger='axis';ho.tooltip.valueFormatter=v=>v.toFixed(1)+'%';ho.grid={left:8,right:14,top:60,bottom:4,containLabel:true};
@@ -1701,11 +1704,13 @@ function renderGeneral(){
   const vo=base();vo.tooltip.trigger='axis';vo.tooltip.axisPointer={type:'shadow'};vo.grid={left:8,right:14,top:34,bottom:4,containLabel:true};
   vo.legend={top:0,left:0,textStyle:{color:TK.fg,fontSize:11},itemWidth:10,itemHeight:10,icon:'roundRect'};
   vo.xAxis=axisCat(MESES);vo.yAxis=axisVal();
-  vo.series=[{name:'Lesionados',type:'bar',stack:'s',barMaxWidth:30,itemStyle:{color:TK.amber},data:Array.from(sl),label:{show:false}},
-    {name:'Fallecidos',type:'bar',stack:'s',barMaxWidth:30,itemStyle:{color:TK.rose,borderRadius:[4,4,0,0]},data:Array.from(sf),label:{show:true,position:'top',color:TK.muted,fontSize:10.5,formatter:p=>{const t=sl[p.dataIndex]+sf[p.dataIndex];return t?fmt(t):''}}}];
+  const sevLab={show:true,position:'top',color:TK.muted,fontSize:10.5,formatter:p=>p.value?fmt(p.value):''};
+  vo.tooltip.valueFormatter=v=>fmt(v);vo.yAxis=axisVal({max:v=>Math.ceil(v.max*1.12)||1});
+  vo.series=[{name:'Lesionados',type:'bar',barGap:'10%',barMaxWidth:18,itemStyle:{color:TK.amber,borderRadius:[4,4,0,0]},data:Array.from(sl),label:sevLab},
+    {name:'Fallecidos',type:'bar',barMaxWidth:18,itemStyle:{color:TK.rose,borderRadius:[4,4,0,0]},data:Array.from(sf),label:sevLab}];
   mount('g_sev',()=>vo).inst.setOption(vo);
   // gráficas por módulo
-  GEN.forEach(([k])=>GMOD[k].forEach((g,i)=>{
+  GEN.filter(([k])=>k!=='bit').forEach(([k])=>GMOD[k].forEach((g,i)=>{
     const o=g.t==='donut'?genDonut(k,g,R[k]):genBar(k,g,R[k]);
     const c=mount('gm_'+k+'_'+i,()=>o,p=>{const code=p.data&&p.data.code;if(code==null||code<0)return;setCodes(k,g.dim,[code]);S.page[k]=0;go(k)});
     if(c)c.inst.setOption(o);
@@ -1715,7 +1720,6 @@ function renderGeneral(){
 const GMOD={
   acc:[{t:'donut',dim:'tipo',title:'Tipo de accidente'},{t:'hbar',dim:'causa',top:8,title:'Causas principales',hide:['SIN DATO','CORTE CIRCULACION']},{t:'bar',dim:'edad',title:'Edad del conductor',hide:['SIN DATO']}],
   eve:[{t:'hbar',dim:'accion',top:8,title:'Acciones principales'},{t:'hbar',dim:'dependencia',top:8,title:'Dependencia apoyada'},{t:'donut',dim:'origen',title:'Origen'}],
-  bit:[{t:'hbar',dim:'clave',top:8,title:'Claves / razonamiento'},{t:'hbar',dim:'unidad',top:8,title:'Unidades más activas',hide:['SIN DATO']},{t:'donut',dim:'grupo',title:'Grupo'}],
   cor:[{t:'donut',dim:'tipo',title:'Tipo de vehículo'},{t:'hbar',dim:'marca',top:8,title:'Marcas principales',hide:['OTROS','SIN DATO']},{t:'bar',dim:'modelo',title:'Antigüedad del vehículo',hide:['SIN DATO']}],
   mal:[{t:'donut',dim:'evento',title:'Tipo de evento'},{t:'hbar',dim:'colonia',top:8,title:'Colonias con más reportes',hide:['SIN DATO','OTROS']},{t:'donut',dim:'estatus',title:'Estatus de atención'}],
   det:[{t:'donut',dim:'etilico',title:'Grado etílico'},{t:'bar',dim:'edad',title:'Edad',hide:['SIN DATO']},{t:'donut',dim:'autoridad',title:'Autoridad'}]
@@ -1846,7 +1850,10 @@ function updateModuleMap(k){
   const ord=ORDER[dim];items.sort(ord?(a,b)=>ord.indexOf(a.name)-ord.indexOf(b.name):(a,b)=>b.v-a.v);
   const lg=document.getElementById(o.el.id+'_lg');
   lg.innerHTML=`<span class="lgn">${fmt(n)} con ubicación de ${fmt(idx.length)}</span>`+(mode==='heat'?'':items.slice(0,12).map(x=>`<button class="lgi${sel&&!sel[x.code]?' off':''}" data-code="${x.code}"><i style="background:${colorOf(dm,x.code)}"></i>${esc(dm.fixed?x.name:title(x.name))} <b class="num">${fmt(x.v)}</b></button>`).join(''));
-  lg.querySelectorAll('[data-code]').forEach(b=>b.onclick=()=>toggle(k,dim,+b.dataset.code));
+  lg.innerHTML+=(mode!=='heat'&&sel?'<button class="linkbtn" data-lgall="1">Mostrar todos</button>':'')+(mode==='heat'?'':'<span class="lgn">Clic para activar o desactivar</span>');
+  lg.querySelectorAll('[data-code]').forEach(b=>b.onclick=()=>{const c=+b.dataset.code;
+    if(!getSel(k,dim)){setCodes(k,dim,dm.dict.map((_,j)=>j).filter(j=>j!==c));S.page[k]=0;refresh()}else toggle(k,dim,c)});
+  const ra=lg.querySelector('[data-lgall]');if(ra)ra.onclick=()=>{setCodes(k,dim,null);S.page[k]=0;refresh()};
 }
 
 /* ---------- Tablas con filtro por columna */
