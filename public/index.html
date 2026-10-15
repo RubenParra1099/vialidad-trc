@@ -982,8 +982,18 @@ button.lgi:hover{border-color:var(--accent)}
 .gs-dim:hover,.gs-dim.on{background:var(--panel2)}
 .gs-opts{margin:2px 0 6px 10px;padding-left:8px;border-left:1px solid var(--line2);display:grid;gap:1px;max-height:260px;overflow-y:auto}
 .gs-act{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:2px 0 6px;font-size:11px;color:var(--faint)}
+.gs-act{justify-content:flex-start}
+.gs-act span{margin-left:auto}
 .gs-act .linkbtn{padding:2px 8px;font-size:11px}
-.gs-opt{display:flex;align-items:center;gap:8px;padding:4px;border-radius:6px;font-size:12px;cursor:pointer}
+.gs-act .linkbtn:disabled{opacity:.4;cursor:default}
+.gs-q{width:100%;margin:0 0 6px;padding:5px 8px;border:1px solid var(--line2);border-radius:8px;background:var(--panel2);font-size:12px;color:var(--fg)}
+.gs-none{padding:6px 4px;font-size:11.5px;color:var(--faint)}
+.gs-opt label{display:flex;align-items:center;gap:8px;flex:1;min-width:0;cursor:pointer}
+.gs-solo{flex:none;border:1px solid var(--line2);background:var(--panel);color:var(--tone);border-radius:6px;padding:0 6px;font-size:10.5px;font-weight:700;line-height:18px;opacity:0;transition:opacity .12s}
+.gs-opt:hover .gs-solo,.gs-solo:focus-visible{opacity:1}
+@media (hover:none){.gs-solo{opacity:1}}
+.gs-opt{display:flex;align-items:center;gap:6px;padding:4px;border-radius:6px;font-size:12px}
+.gs-opt[hidden]{display:none}
 .gs-opt:hover{background:var(--panel2)}
 .gs-opt input{accent-color:var(--tone);margin:0;flex:none}
 .gs-opt i{width:9px;height:9px;border-radius:50%;flex:none}
@@ -1614,9 +1624,10 @@ function refresh(){
   // pills
   m.groups.forEach(g=>g[2].forEach(d=>{const b=$('#pill_'+d);if(!b)return;const a=getSel(k,d);const n=a?a.reduce((s,x)=>s+x,0):0;b.classList.toggle('act',n>0);b.innerHTML=`${LBL[d]}${n?` <span class="cnt">${n}</span>`:''} ${ic('down',13)}`}));
   // chips
-  const chips=[];if(S.q[k])chips.push(`<span class="chip"><i>Búsqueda:</i> “${esc(S.q[k])}”<button aria-label="Quitar búsqueda" data-rmq="1">${ic('x',11)}</button></span>`);for(const [d,a] of Object.entries(S.f[k])){const dm=DS[k].dims[d];a.forEach((v,c)=>{if(v)chips.push(`<span class="chip"><i>${LBL[d]}:</i> ${esc(dm.fixed?dm.dict[c]:title(dm.dict[c]))}<button aria-label="Quitar" data-rm="${d}:${c}">${ic('x',11)}</button></span>`)})}
+  const chips=[];if(S.q[k])chips.push(`<span class="chip"><i>Búsqueda:</i> “${esc(S.q[k])}”<button aria-label="Quitar búsqueda" data-rmq="1">${ic('x',11)}</button></span>`);for(const [d,a] of Object.entries(S.f[k])){const dm=DS[k].dims[d];if(!a.some(x=>x))chips.push(`<span class="chip"><i>${LBL[d]}:</i> ninguna<button aria-label="Quitar" data-rmall="${k}:${d}">${ic('x',11)}</button></span>`);a.forEach((v,c)=>{if(v)chips.push(`<span class="chip"><i>${LBL[d]}:</i> ${esc(dm.fixed?dm.dict[c]:title(dm.dict[c]))}<button aria-label="Quitar" data-rm="${d}:${c}">${ic('x',11)}</button></span>`)})}
   $('#chips').innerHTML=chips.length?chips.join('')+`<button class="linkbtn" id="clearAll">Limpiar todo</button>`:`<span class="none">Sin filtros: se muestran todos los ${m.noun} del rango seleccionado.</span>`;
   $('#chips').querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{const [d,c]=b.dataset.rm.split(':');toggle(k,d,+c)});
+  $('#chips').querySelectorAll('[data-rmall]').forEach(b=>b.onclick=()=>{const [m,d]=b.dataset.rmall.split(':');setCodes(m,d,null);S.page[m]=0;refresh()});
   $('#chips').querySelectorAll('[data-rmq]').forEach(b=>b.onclick=()=>{setSearch([k],'');const qi=$('#q_'+k);if(qi)qi.value='';refresh()});
   const ca=$('#clearAll');if(ca)ca.onclick=()=>{S.f[k]={};setSearch([k],'');const qi=$('#q_'+k);if(qi)qi.value='';S.page[k]=0;refresh()};
   $('#showing').innerHTML=`Mostrando <b class="num">${fmt(idx.length)}</b> de ${fmt(DS[k].n)} ${m.noun}`;
@@ -1890,7 +1901,11 @@ function focusRecord(o,k,i){
 document.addEventListener('click',e=>{const b=e.target.closest('[data-detail]');if(b){const [k,i]=b.dataset.detail.split(':');openDetail(k,+i)}});
 
 /* leyendas: el primer clic oculta el concepto; los siguientes lo activan o desactivan */
-function legendToggle(k,d,c){if(!getSel(k,d))setCodes(k,d,DS[k].dims[d].dict.map((_,j)=>j).filter(j=>j!==c));else toggle(k,d,c,true);S.page[k]=0}
+function legendToggle(k,d,c){const n=DS[k].dims[d].dict.length;let a=getSel(k,d);
+  if(!a){a=new Uint8Array(n).fill(1);S.f[k][d]=a}
+  a[c]^=1;if(a.every(x=>x))delete S.f[k][d];S.page[k]=0}
+// "Ninguna": filtro explícito sin opciones (no se muestra ningún registro de ese concepto)
+function setNone(k,d){S.f[k][d]=new Uint8Array(DS[k].dims[d].dict.length);S.page[k]=0}
 function updateModuleMap(k){
   const o=MM[k];if(!o)return;const ch=o.ch;const dim=S.mapColor[k]||ch.colorBy[0];const dm=DS[k].dims[dim];const idx=rows(k);const mode=S.mapMode[k]||'cluster';
   const n=setPoints(o,[{k,idx,color:i=>colorOf(dm,dm.c[i])}],mode);
@@ -2011,11 +2026,19 @@ function renderGeo(){
 function sideOpts(k,d,swatch){
   const dm=DS[k].dims[d],sel=getSel(k,d),la=DS[k].vals.lat,cnt=new Float64Array(dm.dict.length);for(const i of rows(k,[d]))if(la[i]!=null)cnt[dm.c[i]]++;
   const it=dm.dict.map((name,code)=>({name,code,v:cnt[code]})).filter(x=>x.v>0||(sel&&sel[x.code]));const ord=ORDER[d];it.sort(ord?(x,y)=>ord.indexOf(x.name)-ord.indexOf(y.name):(x,y)=>y.v-x.v);
-  return `<div class="gs-opts"><div class="gs-act"><button class="linkbtn" data-gall="${k}:${d}">Todas</button><span>${fmt(it.length)} opciones</span></div>${it.map(x=>`<label class="gs-opt"><input type="checkbox" data-gopt="${k}:${d}:${x.code}" ${!sel||sel[x.code]?'checked':''}>${swatch?`<i style="background:${colorOf(dm,x.code)}"></i>`:''}<span class="t">${esc(dm.fixed?x.name:title(x.name))}</span><b class="num">${fmt(x.v)}</b></label>`).join('')}</div>`;
+  const on=it.filter(x=>!sel||sel[x.code]).length,q=(S.sideQ||{})[k+':'+d]||'';
+  return `<div class="gs-opts" data-gk="${k}:${d}"><div class="gs-act"><button class="linkbtn" data-gall="${k}:${d}" ${sel?'':'disabled'}>Todas</button><button class="linkbtn" data-gnone="${k}:${d}" ${on?'':'disabled'}>Ninguna</button><span>${fmt(on)} de ${fmt(it.length)}</span></div>
+    ${it.length>10?`<input class="gs-q" type="search" placeholder="Buscar opción…" value="${esc(q)}" aria-label="Buscar opción">`:''}
+    ${it.map(x=>{const nm=dm.fixed?x.name:title(x.name);return `<div class="gs-opt" data-nm="${esc(norm(nm))}"><label><input type="checkbox" data-gopt="${k}:${d}:${x.code}" ${!sel||sel[x.code]?'checked':''}>${swatch?`<i style="background:${colorOf(dm,x.code)}"></i>`:''}<span class="t" title="${esc(nm)}">${esc(nm)}</span></label><button class="gs-solo" data-gsolo="${k}:${d}:${x.code}" title="Mostrar solo ${esc(nm)}">Solo</button><b class="num">${fmt(x.v)}</b></div>`}).join('')}<div class="gs-none" hidden>Sin coincidencias</div></div>`;
 }
 function wireSideOpts(el,after){
   el.querySelectorAll('[data-gopt]').forEach(c=>c.onchange=()=>{const [k,d,code]=c.dataset.gopt.split(':');legendToggle(k,d,+code);after()});
   el.querySelectorAll('[data-gall]').forEach(b=>b.onclick=()=>{const [k,d]=b.dataset.gall.split(':');setCodes(k,d,null);S.page[k]=0;after()});
+  el.querySelectorAll('[data-gnone]').forEach(b=>b.onclick=()=>{const [k,d]=b.dataset.gnone.split(':');setNone(k,d);after()});
+  el.querySelectorAll('[data-gsolo]').forEach(b=>b.onclick=()=>{const [k,d,c]=b.dataset.gsolo.split(':');setCodes(k,d,[+c]);S.page[k]=0;after()});
+  el.querySelectorAll('.gs-q').forEach(inp=>{const box=inp.closest('.gs-opts'),key=box.dataset.gk;
+    const apply=()=>{const t=norm(inp.value).trim();let n=0;box.querySelectorAll('.gs-opt').forEach(o=>{const ok=!t||o.dataset.nm.includes(t);o.hidden=!ok;if(ok)n++});box.querySelector('.gs-none').hidden=n>0};
+    inp.oninput=()=>{(S.sideQ||(S.sideQ={}))[key]=inp.value;apply()};apply()});
 }
 const CHEV=o=>`<svg class="chev${o?' o':''}" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>`;
 /* barra lateral del mapa: capa → concepto → opciones */
@@ -2051,9 +2074,10 @@ function refreshGeo(){
   geoSide(lcn);
   // chips
   const chips=[];if(S.q.acc)chips.push(`<span class="chip"><i>Búsqueda:</i> “${esc(S.q.acc)}”<button aria-label="Quitar búsqueda" data-rmq="1">${ic('x',11)}</button></span>`);
-  GEO_L.forEach(([k,l])=>{for(const [d,a] of Object.entries(S.f[k])){const dm=DS[k].dims[d];a.forEach((v,c)=>{if(v)chips.push(`<span class="chip"><i>${esc(MODS[k].title)} · ${LBL[d]}:</i> ${esc(dm.fixed?dm.dict[c]:title(dm.dict[c]))}<button aria-label="Quitar" data-rm="${k}:${d}:${c}">${ic('x',11)}</button></span>`)})}});
+  GEO_L.forEach(([k,l])=>{for(const [d,a] of Object.entries(S.f[k])){const dm=DS[k].dims[d];if(!a.some(x=>x))chips.push(`<span class="chip"><i>${esc(MODS[k].title)} · ${LBL[d]}:</i> ninguna<button aria-label="Quitar" data-rmall="${k}:${d}">${ic('x',11)}</button></span>`);a.forEach((v,c)=>{if(v)chips.push(`<span class="chip"><i>${esc(MODS[k].title)} · ${LBL[d]}:</i> ${esc(dm.fixed?dm.dict[c]:title(dm.dict[c]))}<button aria-label="Quitar" data-rm="${k}:${d}:${c}">${ic('x',11)}</button></span>`)})}});
   $('#chips').innerHTML=chips.length?chips.join('')+`<button class="linkbtn" id="clearAll">Limpiar todo</button>`:'<span class="none">Sin filtros: se muestran todos los puntos del rango seleccionado.</span>';
   $('#chips').querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{const [k,d,c]=b.dataset.rm.split(':');toggle(k,d,+c)});
+  $('#chips').querySelectorAll('[data-rmall]').forEach(b=>b.onclick=()=>{const [k,d]=b.dataset.rmall.split(':');setCodes(k,d,null);S.page[k]=0;refreshGeo()});
   $('#chips').querySelectorAll('[data-rmq]').forEach(b=>b.onclick=()=>{setSearch(GEO_L.map(g=>g[0]),'');$('#q_geo').value='';refreshGeo()});
   const ca=$('#clearAll');if(ca)ca.onclick=()=>{GEO_L.forEach(([k])=>S.f[k]={});setSearch(GEO_L.map(g=>g[0]),'');$('#q_geo').value='';refreshGeo()};
   geoTable();
