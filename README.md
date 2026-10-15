@@ -1,6 +1,6 @@
 # Argos·Vialidad · Vialidad y Movilidad Urbana
 
-Plataforma directiva de indicadores de la Dirección de Vialidad de Torreón (datos 2023): panel general, mapa georreferenciado y módulos de accidentes viales, eventos y apoyos, bitácora, vehículos al corralón, mal estacionados y detenidos.
+Plataforma directiva de indicadores de la Dirección de Vialidad de Torreón (datos 2023): panel general y módulos de accidentes viales, eventos y apoyos, bitácora, vehículos al corralón, mal estacionados y detenidos.
 
 > **Contiene datos personales** (nombres, domicilios, teléfonos, placas, series). El repositorio debe ser **privado** y el sitio queda protegido con usuario y contraseña.
 
