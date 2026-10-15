@@ -959,6 +959,21 @@ button.lgi:hover{border-color:var(--accent)}
 .gwrap .lmap{border:0;border-radius:0}
 .gwrap.two{grid-template-columns:270px minmax(0,1fr) 270px}
 .vside{border-right:0;border-left:1px solid var(--line)}
+.gwrap{position:relative}
+.gwrap.one{grid-template-columns:minmax(0,1fr)}
+.vside.drawer{position:absolute;top:0;right:0;bottom:0;width:min(270px,88%);max-height:none;z-index:500;display:none;box-shadow:-10px 0 28px -14px rgba(0,0,0,.45)}
+.gwrap.vopen .vside.drawer{display:flex}
+.gs-hd{position:sticky}
+.vs-x{position:absolute;top:8px;right:8px;width:26px;height:26px;border:0;border-radius:8px;background:transparent;color:var(--muted);font-size:18px;line-height:1}
+.vs-x:hover{background:var(--panel2);color:var(--fg)}
+.vside.drawer .gs-hd{padding-right:38px}
+.vtog{display:inline-flex;align-items:center;gap:6px}
+.vtog.on{color:var(--accent);border-color:var(--accent)}
+.vtog em{font-style:normal;font-size:10.5px;font-weight:800;color:#fff;background:var(--accent);border-radius:999px;padding:0 6px;line-height:16px}
+.fullmap .vtog,.fullmap .vs-x{display:none!important}
+.fullmap .vside.drawer{position:static;display:flex;width:auto;box-shadow:none}
+.fullmap .gwrap.sm{grid-template-columns:240px minmax(0,1fr) 270px}
+.fullmap .gwrap.one{grid-template-columns:minmax(0,1fr) 270px}
 .vs-ctl{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;padding:10px 12px 4px;font-size:11.5px;color:var(--muted)}
 .vs-ctl .minis button{padding:2px 7px;font-size:11px}
 .vs-ctl .linkbtn{margin-left:auto;padding:2px 8px;font-size:11px}
@@ -1387,7 +1402,9 @@ function rows(k,except){
   const out=new Int32Array(ds.n);let m=0;const fe=ds.fecha,lo=S.from,hi=S.to,na=act.length,qm=S.qm[k];
   outer:for(let i=0;i<ds.n;i++){const t=fe[i];if(t<lo||t>hi)continue;if(qm&&!qm[i])continue;
     for(let j=0;j<na;j++){if(!act[j][1][act[j][0][i]])continue outer}out[m++]=i}
-  const r=out.subarray(0,m);memo.set(key,r);return r;
+  let r=out.subarray(0,m);
+  if(S.mod===k&&!(except&&except.includes('vias')))r=byMask(r,roadMask(k,k));
+  memo.set(key,r);return r;
 }
 function wOf(k,metric){return metric==='count'?null:DS[k].vals[metric]}
 function groupBy(k,d,idx,metric){
@@ -1550,11 +1567,11 @@ function chartCard(k,ch,i){
   const id=`c_${k}_${i}`;const h=ch.h||(ch.t==='map'?420:ch.t==='heat'?300:ch.t==='trend'?300:ch.t==='hbar'?Math.max(260,Math.min(480,(ch.top||10)*26+20)):ch.t==='donut'?340:280);
   let tools='';const icn={trend:'trend',donut:'pie',hbar:'chart',bar:'chart',heat:'cal',map:'map',pivot:'layers',table:'table',people:'users'}[ch.t];
   if(ch.t==='trend')tools=`<div class="minis" role="group" aria-label="Granularidad">${[['mes','Mensual'],['semana','Semanal'],['dia','Diario']].map(([v,l])=>`<button data-gran="${v}" class="${S.gran[k]===v?'on':''}">${l}</button>`).join('')}</div>`;
-  if(ch.t==='map'){const cur=S.mapColor[k]||ch.colorBy[0];const md=S.mapMode[k]||'cluster';tools=`<div class="minis">${MAPMODES.map(([v,l])=>`<button data-mapmode="${v}" class="${md===v?'on':''}">${l}</button>`).join('')}</div><button class="linkbtn fmbtn" data-fullmap="${k}" title="Abrir el mapa en una pestaña nueva, a pantalla completa">${FMI} Pantalla completa</button>`}
+  if(ch.t==='map'){const cur=S.mapColor[k]||ch.colorBy[0];const md=S.mapMode[k]||'cluster';tools=`<div class="minis">${MAPMODES.map(([v,l])=>`<button data-mapmode="${v}" class="${md===v?'on':''}">${l}</button>`).join('')}</div>${vtogBtn(k,id+'_wrap')}<button class="linkbtn fmbtn" data-fullmap="${k}" title="Abrir el mapa en una pestaña nueva, a pantalla completa">${FMI} Pantalla completa</button>`}
   if(ch.t==='pivot'){const pv=S.pivot[k]||{r:ch.rows,c:ch.cols};const opts=v=>pivotDims(k).map(d=>`<option value="${d}" ${d===v?'selected':''}>${LBL[d]}</option>`).join('');
     tools=`<select id="pvr_${k}" aria-label="Filas">${opts(pv.r)}</select><span class="hint">×</span><select id="pvc_${k}" aria-label="Columnas">${opts(pv.c)}</select>`}
   const sub=ch.sub||(ch.t==='hbar'||ch.t==='bar'||ch.t==='donut'?'Clic para filtrar':ch.t==='pivot'?'Clic en una celda para filtrar ambas dimensiones':ch.t==='table'?'Registros que cumplen los filtros · escribe en la fila de filtros de cada columna · clic en una fila para ver la ficha':ch.t==='people'?'Conductores y vehículos de los accidentes filtrados · busca por nombre, placa o teléfono':ch.t==='map'?'Clic en un punto para ver la ficha · activa o desactiva conceptos en la barra lateral':'');
-  const body=ch.t==='pivot'?`<div class="tw" id="${id}"></div>`:(ch.t==='table'||ch.t==='people')?`<div id="${id}"></div>`:ch.t==='map'?`<div class="gwrap sm" style="--tone:${MODS[k].tone}"><aside class="gside" id="${id}_side" style="max-height:${h}px" aria-label="Conceptos del mapa"></aside><div class="lmap" id="${id}" style="height:${h}px"></div></div>`:`<div class="ch" id="${id}" style="height:${h}px"></div>`;
+  const body=ch.t==='pivot'?`<div class="tw" id="${id}"></div>`:(ch.t==='table'||ch.t==='people')?`<div id="${id}"></div>`:ch.t==='map'?`<div class="gwrap sm${vopen(k)?' vopen':''}" id="${id}_wrap" style="--tone:${MODS[k].tone}"><aside class="gside" id="${id}_side" style="max-height:${h}px" aria-label="Conceptos del mapa"></aside><div class="lmap" id="${id}" style="height:${h}px"></div><aside class="gside vside drawer" id="${id}_vias" aria-label="Vialidades principales"></aside></div>`:`<div class="ch" id="${id}" style="height:${h}px"></div>`;
   return `<section class="card cc s${ch.span}${ch.t==='map'?' mapcard':''}" data-ci="${i}"><div class="hd"><div><h3>${ic(icn,16)}${esc(ch.title)}</h3><div class="sub">${esc(sub)}</div></div><div class="tools">${tools}</div></div>${body}</section>`;
 }
 function pivotDims(k){const g=MODS[k].groups.flatMap(x=>x[2]);return g}
@@ -1638,11 +1655,13 @@ function refresh(){
   m.groups.forEach(g=>g[2].forEach(d=>{const b=$('#pill_'+d);if(!b)return;const a=getSel(k,d);const n=a?a.reduce((s,x)=>s+x,0):0;b.classList.toggle('act',n>0);b.innerHTML=`${LBL[d]}${n?` <span class="cnt">${n}</span>`:''} ${ic('down',13)}`}));
   // chips
   const chips=[];if(S.q[k])chips.push(`<span class="chip"><i>Búsqueda:</i> “${esc(S.q[k])}”<button aria-label="Quitar búsqueda" data-rmq="1">${ic('x',11)}</button></span>`);for(const [d,a] of Object.entries(S.f[k])){const dm=DS[k].dims[d];if(!a.some(x=>x))chips.push(`<span class="chip"><i>${LBL[d]}:</i> ninguna<button aria-label="Quitar" data-rmall="${k}:${d}">${ic('x',11)}</button></span>`);a.forEach((v,c)=>{if(v)chips.push(`<span class="chip"><i>${LBL[d]}:</i> ${esc(dm.fixed?dm.dict[c]:title(dm.dict[c]))}<button aria-label="Quitar" data-rm="${d}:${c}">${ic('x',11)}</button></span>`)})}
+  chips.push(...viaChips(k));
   $('#chips').innerHTML=chips.length?chips.join('')+`<button class="linkbtn" id="clearAll">Limpiar todo</button>`:`<span class="none">Sin filtros: se muestran todos los ${m.noun} del rango seleccionado.</span>`;
   $('#chips').querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{const [d,c]=b.dataset.rm.split(':');toggle(k,d,+c)});
   $('#chips').querySelectorAll('[data-rmall]').forEach(b=>b.onclick=()=>{const [m,d]=b.dataset.rmall.split(':');setCodes(m,d,null);S.page[m]=0;refresh()});
+  wireViaChips($('#chips'),()=>{S.page[k]=0;refresh()});
   $('#chips').querySelectorAll('[data-rmq]').forEach(b=>b.onclick=()=>{setSearch([k],'');const qi=$('#q_'+k);if(qi)qi.value='';refresh()});
-  const ca=$('#clearAll');if(ca)ca.onclick=()=>{S.f[k]={};setSearch([k],'');const qi=$('#q_'+k);if(qi)qi.value='';S.page[k]=0;refresh()};
+  const ca=$('#clearAll');if(ca)ca.onclick=()=>{S.f[k]={};vst(k).sel=[];setSearch([k],'');const qi=$('#q_'+k);if(qi)qi.value='';S.page[k]=0;refresh()};
   $('#showing').innerHTML=`Mostrando <b class="num">${fmt(idx.length)}</b> de ${fmt(DS[k].n)} ${m.noun}`;
   refreshDates();
   // kpis
@@ -1735,7 +1754,7 @@ function renderGeneral(){
     <div class="kpi"><div class="l">Detenidos</div><div class="v num">${fmt(R.det.length)}</div><div class="s">${fmt(R.cor.length)} vehículos al corralón</div></div></section>
    <div class="tiles">${GEN.filter(([k])=>k!=='bit').map(([k,l])=>`<button class="tile" data-mod="${k}" style="--tone:${MODS[k].tone}"><span class="h">${ic(MODS[k].icon,17)}${l}</span><span class="v num">${fmt(R[k].length)}</span><svg class="mb" viewBox="0 0 240 38" preserveAspectRatio="none" id="mb_${k}" aria-hidden="true"></svg><span class="s">${esc(MODS[k].sub)} · por mes</span><span class="go">Abrir módulo →</span></button>`).join('')}</div>
    <div class="grid">
-    <section class="card cc s8 mapcard"><div class="hd"><div><h3>${ic('map',16)}Mapa operativo integrado</h3><div class="sub">Clic en un punto para ver su ficha completa</div></div><div class="tools"><button class="linkbtn fmbtn" data-fullmap="general" title="Abrir el mapa en una pestaña nueva, a pantalla completa">${FMI} Pantalla completa</button><button class="linkbtn" data-mod="geo">${ic('map',13)} Abrir mapa completo</button></div></div><div class="mlegend" id="g_map_lg"></div><div class="lmap" id="g_map" style="height:460px"></div></section>
+    <section class="card cc s8 mapcard"><div class="hd"><div><h3>${ic('map',16)}Mapa operativo integrado</h3><div class="sub">Clic en un punto para ver su ficha completa</div></div><div class="tools">${vtogBtn('general','g_map_wrap')}<button class="linkbtn fmbtn" data-fullmap="general" title="Abrir el mapa en una pestaña nueva, a pantalla completa">${FMI} Pantalla completa</button><button class="linkbtn" data-mod="geo">${ic('map',13)} Abrir mapa completo</button></div></div><div class="mlegend" id="g_map_lg"></div><div class="gwrap one${vopen('general')?' vopen':''}" id="g_map_wrap"><div class="lmap" id="g_map" style="height:460px"></div><aside class="gside vside drawer" id="g_map_vias" aria-label="Vialidades principales"></aside></div></section>
     <section class="card cc s4"><div class="hd"><div><h3>${ic('clock',16)}Perfil horario</h3><div class="sub">Porcentaje de cada base por hora del día</div></div></div><div class="ch" id="g_hour" style="height:460px"></div></section>
     <section class="card cc s6"><div class="hd"><div><h3>${ic('pin',16)}Carga por sector</h3><div class="sub">Registros por sector en las bases con sector</div></div></div><div class="ch" id="g_sec" style="height:360px"></div></section>
     <section class="card cc s6"><div class="hd"><div><h3>${ic('crash',16)}Severidad mensual de accidentes</h3><div class="sub">Lesionados y fallecidos por mes</div></div></div><div class="ch" id="g_sev" style="height:360px"></div></section>
@@ -1751,9 +1770,11 @@ function renderGeneral(){
     $('#mb_'+k).innerHTML=Array.from(a,(v,i)=>`<rect x="${(i*bw+2).toFixed(1)}" y="${(38-v/mx*36).toFixed(1)}" width="${(bw-4).toFixed(1)}" height="${(v/mx*36).toFixed(1)}" rx="2" style="fill:${MODS[k].tone}" opacity="${v?0.9:0.2}"><title>${MESES[i]}: ${fmt(v)}</title></rect>`).join('')});
   // mapa integrado
   {const o=createMap($('#g_map'));const L4=GEO_L.slice(0,4);
-   const draw=()=>{setPoints(o,L4.filter(([k])=>S.gLayers[k]).map(([k])=>({k,idx:R[k],color:()=>LAYC(k)})),'cluster');
-     const lg=$('#g_map_lg');lg.innerHTML=L4.map(([k,l])=>`<button class="lgi${S.gLayers[k]?'':' off'}" data-glay="${k}" aria-pressed="${!!S.gLayers[k]}" title="Clic para ${S.gLayers[k]?'ocultar':'mostrar'}"><i style="background:${LAYC(k)}"></i>${l} <b class="num">${fmt(R[k].filter(i=>hasGeo(k,i)).length)}</b></button>`).join('')+'<span class="lgn">Clic para activar o desactivar</span>';
-     lg.querySelectorAll('[data-glay]').forEach(b=>b.onclick=()=>{S.gLayers[b.dataset.glay]=!S.gLayers[b.dataset.glay];draw()})};
+   const G=k=>byMask(R[k],roadMask(k,'general'));
+   const draw=()=>{setPoints(o,L4.filter(([k])=>S.gLayers[k]).map(([k])=>({k,idx:G(k),color:()=>LAYC(k)})),'cluster');
+     const lg=$('#g_map_lg');lg.innerHTML=L4.map(([k,l])=>`<button class="lgi${S.gLayers[k]?'':' off'}" data-glay="${k}" aria-pressed="${!!S.gLayers[k]}" title="Clic para ${S.gLayers[k]?'ocultar':'mostrar'}"><i style="background:${LAYC(k)}"></i>${l} <b class="num">${fmt(G(k).filter(i=>hasGeo(k,i)).length)}</b></button>`).join('')+'<span class="lgn">Clic para activar o desactivar</span>';
+     lg.querySelectorAll('[data-glay]').forEach(b=>b.onclick=()=>{S.gLayers[b.dataset.glay]=!S.gLayers[b.dataset.glay];draw()});
+     viaSide('general',$('#g_map_vias'),o,L4.filter(([k])=>S.gLayers[k]).map(([k])=>[k,R[k]]),draw)};
    draw()}
   // perfil horario
   const HL=[['acc','Accidentes',TK.cat[1]],['eve','Eventos',TK.cat[2]],['mal','Mal estacionados',TK.cat[5]],['det','Detenidos',TK.cat[4]]];
@@ -1929,6 +1950,7 @@ function updateModuleMap(k){
   el.scrollTop=st;
   el.querySelectorAll('[data-mdim]').forEach(b=>b.onclick=()=>{S.mapColor[k]=b.dataset.mdim;updateModuleMap(k)});
   wireSideOpts(el,refresh);
+  viaSide(k,document.getElementById(o.el.id+'_vias'),o,[[k,rows(k,['vias'])]],()=>{S.page[k]=0;refresh()});
 }
 
 /* ---------- Tablas con filtro por columna */
@@ -2035,12 +2057,14 @@ function renderGeo(){
   refreshGeo();
   if(S.focus){const {k,i}=S.focus;S.focus=null;setTimeout(()=>focusRecord(GM,k,i),350)}
 }
-/* ---------- Vialidades principales: segunda barra lateral del mapa georreferenciado */
+/* ---------- Vialidades principales: barra lateral de vialidades en todos los mapas */
 // Filtra los registros que están a menos de N metros de las vialidades elegidas (cálculo por coordenadas).
+// Cada mapa tiene su propia selección: 'geo', 'general' o la clave del módulo.
 const VTIPOS=[['blvd','Bulevares',/^(Boulevard|Blvd\.?) /],['calz','Calzadas',/^Calzada /],['av','Avenidas',/^(Avenida|Av\.) /],
   ['carr','Periféricos y carreteras',/^(Periférico|Carretera|Libramiento|Autopista|Ramal) /],['prol','Prolongaciones y paseos',/^(Prolongaci[oó]n|Paseo|Circuito) /]];
 const VDIST=[50,100,200];
 const VABBR=[[/^Boulevard /,'Blvd. '],[/^Avenida /,'Av. '],[/^Calzada /,'Calz. '],[/^Prolongaci[oó]n /,'Prol. '],[/^Carretera /,'Carr. '],[/^Periférico /,'Perif. '],[/^Libramiento /,'Lib. ']];
+const VICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 21 9 3M18 21 15 3M12 5v2M12 11v2M12 17v2"/></svg>';
 const viaNombre=n=>{for(const [r,t] of VABBR)if(r.test(n))return n.replace(r,t);return n};
 let VIAS=null;
 function vias(){
@@ -2069,49 +2093,61 @@ function viasNear(k){
     best.forEach((d,id)=>out[id].push([i,d]))}
   V.near[k]=out;return out;
 }
-function roadMask(k){
-  const sel=S.geoRoads||[];if(!sel.length)return null;const D=S.geoRoadDist||100,V=vias(),key=sel.join(',')+'|'+D;
-  if(V.mask[k]&&V.mask[k].key===key)return V.mask[k].m;
-  const m=new Uint8Array(DS[k].n),near=viasNear(k);for(const id of sel)for(const [i,d] of near[id]||[])if(d<=D)m[i]=1;
-  V.mask[k]={key,m};return m;
+function vst(ctx){const v=S.vr||(S.vr={});return v[ctx]||(v[ctx]={sel:[],dist:100,open:{blvd:true},q:''})}
+function roadMask(k,ctx){
+  const st=vst(ctx);if(!st.sel.length)return null;const V=vias(),key=st.sel.join(',')+'|'+st.dist,mk=ctx+'|'+k;
+  if(V.mask[mk]&&V.mask[mk].key===key)return V.mask[mk].m;
+  const m=new Uint8Array(DS[k].n),near=viasNear(k);for(const id of st.sel)for(const [i,d] of near[id]||[])if(d<=st.dist)m[i]=1;
+  V.mask[mk]={key,m};return m;
 }
-function geoRows(k){const r=rows(k),m=roadMask(k);return m?r.filter(i=>m[i]):r}
+const byMask=(r,m)=>m?r.filter(i=>m[i]):r;
+function geoRows(k){return byMask(rows(k),roadMask(k,'geo'))}
 // resalta en el mapa las vialidades elegidas (debajo de la red vial, como un halo)
-function viaHighlight(){
-  if(!GM)return;const map=GM.map;
-  if(!GM.vhl){map.createPane('vhl').style.zIndex=399;GM.vhlR=L.canvas({pane:'vhl',padding:.4});GM.vhl=L.layerGroup().addTo(map)}
-  GM.vhl.clearLayers();const V=vias(),col=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
-  (S.geoRoads||[]).forEach(id=>{const v=V.list[id];if(v)L.polyline(v.segs,{renderer:GM.vhlR,color:col,weight:12,opacity:.6,interactive:false,lineCap:'round',lineJoin:'round'}).addTo(GM.vhl)});
+function viaHighlight(o,ctx){
+  const map=o.map;
+  if(!o.vhl){map.createPane('vhl').style.zIndex=399;o.vhlR=L.canvas({pane:'vhl',padding:.4});o.vhl=L.layerGroup().addTo(map)}
+  o.vhl.clearLayers();const V=vias(),col=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+  vst(ctx).sel.forEach(id=>{const v=V.list[id];if(v)L.polyline(v.segs,{renderer:o.vhlR,color:col,weight:12,opacity:.6,interactive:false,lineCap:'round',lineJoin:'round'}).addTo(o.vhl)});
 }
-function viaSide(){
-  const el=$('#g_vias');if(!el)return;const st=el.scrollTop,V=vias(),sel=new Set(S.geoRoads||[]),D=S.geoRoadDist||100,op=S.viaOpen||(S.viaOpen={blvd:true}),q=S.viaQ||'';
-  // registros cercanos a cada vialidad, con los filtros de capas y conceptos (sin el de vialidades)
+// el: barra lateral; o: mapa; base: [[k, índices sin el filtro de vialidades]]; after: vuelve a filtrar y dibujar
+function viaSide(ctx,el,o,base,after){
+  if(!el||!o)return;const st=vst(ctx),V=vias(),sel=new Set(st.sel),D=st.dist,sc=el.scrollTop,drawer=el.classList.contains('drawer');
   const cnt=new Float64Array(V.list.length);
-  GEO_L.forEach(([k])=>{if(!S.geoOn[k])return;const r=rows(k),m=new Uint8Array(DS[k].n);for(const i of r)m[i]=1;
-    viasNear(k).forEach((arr,id)=>{let n=0;for(const [i,d] of arr)if(d<=D&&m[i])n++;cnt[id]+=n})});
-  el.innerHTML=`<div class="gs-hd"><b>Vialidades principales</b><span>Elige una o varias para ver solo los registros cercanos</span></div>
+  base.forEach(([k,r])=>{const m=new Uint8Array(DS[k].n);for(const i of r)m[i]=1;viasNear(k).forEach((arr,id)=>{let n=0;for(const [i,d] of arr)if(d<=D&&m[i])n++;cnt[id]+=n})});
+  el.innerHTML=`<div class="gs-hd"><b>Vialidades principales</b><span>Elige una o varias para ver solo los registros cercanos</span>${drawer?'<button class="vs-x" data-vclose="1" aria-label="Cerrar">×</button>':''}</div>
    <div class="vs-ctl"><span>Distancia</span><div class="minis">${VDIST.map(d=>`<button data-vdist="${d}" class="${d===D?'on':''}">${d} m</button>`).join('')}</div>
     ${sel.size?`<button class="linkbtn" data-vclear="1">Quitar (${sel.size})</button>`:''}</div>
-   <div class="vs-q"><input class="gs-q" id="vQ" type="search" placeholder="Buscar vialidad…" value="${esc(q)}" aria-label="Buscar vialidad"></div>
+   <div class="vs-q"><input class="gs-q" type="search" placeholder="Buscar vialidad…" value="${esc(st.q)}" aria-label="Buscar vialidad"></div>
    <div class="gs-dims">${VTIPOS.map(([t,lab])=>{const it=V.list.filter(v=>v.tipo===t).sort((a,b)=>cnt[b.id]-cnt[a.id]||a.txt.localeCompare(b.txt,'es'));
-     const ns=it.filter(v=>sel.has(v.id)).length,o=!!op[t];
-     return `<div class="vs-grp${o?' open':''}" data-vt="${t}"><button class="gs-dim${o?' on':''}" data-vgrp="${t}" aria-expanded="${o}">${CHEV(o)}<span>${lab}</span>${ns?`<em>${ns}</em>`:''}<b class="num vs-n">${it.length}</b></button>
+     const ns=it.filter(v=>sel.has(v.id)).length,op=!!st.open[t];
+     return `<div class="vs-grp${op?' open':''}"><button class="gs-dim${op?' on':''}" data-vgrp="${t}" aria-expanded="${op}">${CHEV(op)}<span>${lab}</span>${ns?`<em>${ns}</em>`:''}<b class="num vs-n">${it.length}</b></button>
        <div class="gs-opts vs-list">${it.map(v=>`<div class="gs-opt" data-nm="${esc(norm(v.txt))}"><label><input type="checkbox" data-via="${v.id}" ${sel.has(v.id)?'checked':''}><span class="t" title="${esc(v.nm)}">${esc(v.txt)}</span></label><button class="gs-solo" data-vfit="${v.id}" title="Ubicar en el mapa">Ver</button><b class="num">${fmt(cnt[v.id])}</b></div>`).join('')}</div></div>`}).join('')}
-   <div class="gs-none" id="vNone" hidden>Sin coincidencias</div></div>`;
-  el.scrollTop=st;
-  const qi=$('#vQ');const apply=()=>{const t=norm(qi.value).trim();let tot=0;
-    el.querySelectorAll('.vs-grp').forEach(g=>{let n=0;g.querySelectorAll('.gs-opt').forEach(o=>{const ok=!t||o.dataset.nm.includes(t);o.hidden=!ok;if(ok)n++});g.classList.toggle('force',!!t);g.hidden=!!t&&!n;tot+=n});
-    $('#vNone').hidden=tot>0};
-  qi.oninput=()=>{S.viaQ=qi.value;apply()};apply();
-  el.querySelectorAll('[data-vgrp]').forEach(b=>b.onclick=()=>{const t=b.dataset.vgrp;op[t]=!op[t];viaSide()});
-  el.querySelectorAll('[data-via]').forEach(c=>c.onchange=()=>{const id=+c.dataset.via,a=new Set(S.geoRoads||[]);a.has(id)?a.delete(id):a.add(id);S.geoRoads=[...a];refreshGeo()});
-  el.querySelectorAll('[data-vdist]').forEach(b=>b.onclick=()=>{S.geoRoadDist=+b.dataset.vdist;refreshGeo()});
-  el.querySelectorAll('[data-vclear]').forEach(b=>b.onclick=()=>{S.geoRoads=[];refreshGeo()});
-  el.querySelectorAll('[data-vfit]').forEach(b=>b.onclick=()=>{const v=V.list[+b.dataset.vfit];if(v&&GM)GM.map.fitBounds(L.latLngBounds(v.segs.flat()),{padding:[30,30],maxZoom:16})});
+   <div class="gs-none vs-none" hidden>Sin coincidencias</div></div>`;
+  el.scrollTop=sc;
+  const qi=el.querySelector('.gs-q');const apply=()=>{const t=norm(qi.value).trim();let tot=0;
+    el.querySelectorAll('.vs-grp').forEach(g=>{let n=0;g.querySelectorAll('.gs-opt').forEach(x=>{const ok=!t||x.dataset.nm.includes(t);x.hidden=!ok;if(ok)n++});g.classList.toggle('force',!!t);g.hidden=!!t&&!n;tot+=n});
+    el.querySelector('.vs-none').hidden=tot>0};
+  qi.oninput=()=>{st.q=qi.value;apply()};apply();
+  el.querySelectorAll('[data-vgrp]').forEach(b=>b.onclick=()=>{st.open[b.dataset.vgrp]=!st.open[b.dataset.vgrp];viaSide(ctx,el,o,base,after)});
+  el.querySelectorAll('[data-via]').forEach(c=>c.onchange=()=>{const id=+c.dataset.via;st.sel=sel.has(id)?st.sel.filter(x=>x!==id):st.sel.concat(id);after()});
+  el.querySelectorAll('[data-vdist]').forEach(b=>b.onclick=()=>{st.dist=+b.dataset.vdist;after()});
+  el.querySelectorAll('[data-vclear]').forEach(b=>b.onclick=()=>{st.sel=[];after()});
+  el.querySelectorAll('[data-vfit]').forEach(b=>b.onclick=()=>{const v=V.list[+b.dataset.vfit];if(v)o.map.fitBounds(L.latLngBounds(v.segs.flat()),{padding:[30,30],maxZoom:16})});
+  el.querySelectorAll('[data-vclose]').forEach(b=>b.onclick=()=>setVopen(ctx,false));
+  viaHighlight(o,ctx);
+  const tb=document.querySelector(`[data-vtoggle="${ctx}"]`);if(tb)tb.innerHTML=`${VICON} Vialidades${st.sel.length?` <em>${st.sel.length}</em>`:''}`;
 }
+// panel de vialidades sobre el mapa (módulos y panel general): se abre con el botón "Vialidades"
+function setVopen(ctx,on){(S.vopen||(S.vopen={}))[ctx]=on;const b=document.querySelector(`[data-vtoggle="${ctx}"]`);if(!b)return;
+  const w=document.getElementById(b.dataset.vwrap);if(w)w.classList.toggle('vopen',on);b.classList.toggle('on',on);b.setAttribute('aria-expanded',on)}
+const vopen=ctx=>!!(S.vopen&&S.vopen[ctx]);
+document.addEventListener('click',e=>{const b=e.target.closest('[data-vtoggle]');if(b)setVopen(b.dataset.vtoggle,!vopen(b.dataset.vtoggle))});
+const vtogBtn=(ctx,wrap)=>`<button class="linkbtn vtog${vopen(ctx)?' on':''}" data-vtoggle="${ctx}" data-vwrap="${wrap}" aria-expanded="${vopen(ctx)}" title="Filtrar por vialidades principales">${VICON} Vialidades</button>`;
+function viaChips(ctx){const st=vst(ctx);return st.sel.map(id=>{const v=vias().list[id];return v?`<span class="chip"><i>Vialidad · ${st.dist} m:</i> ${esc(v.txt)}<button aria-label="Quitar" data-rmvia="${ctx}:${id}">${ic('x',11)}</button></span>`:''}).filter(Boolean)}
+function wireViaChips(box,after){box.querySelectorAll('[data-rmvia]').forEach(b=>b.onclick=()=>{const [ctx,id]=b.dataset.rmvia.split(':');const st=vst(ctx);st.sel=st.sel.filter(x=>x!==+id);after()})}
 /* barras laterales de mapas: casillas de opciones de un concepto (swatch = color en el mapa) */
 function sideOpts(k,d,swatch){
-  const dm=DS[k].dims[d],sel=getSel(k,d),la=DS[k].vals.lat,cnt=new Float64Array(dm.dict.length);const rm=S.mod==='geo'?roadMask(k):null;for(const i of rows(k,[d]))if(la[i]!=null&&(!rm||rm[i]))cnt[dm.c[i]]++;
+  const dm=DS[k].dims[d],sel=getSel(k,d),la=DS[k].vals.lat,cnt=new Float64Array(dm.dict.length);const rm=S.mod==='geo'?roadMask(k,'geo'):null;for(const i of rows(k,[d]))if(la[i]!=null&&(!rm||rm[i]))cnt[dm.c[i]]++;
   const it=dm.dict.map((name,code)=>({name,code,v:cnt[code]})).filter(x=>x.v>0||(sel&&sel[x.code]));const ord=ORDER[d];it.sort(ord?(x,y)=>ord.indexOf(x.name)-ord.indexOf(y.name):(x,y)=>y.v-x.v);
   const on=it.filter(x=>!sel||sel[x.code]).length,q=(S.sideQ||{})[k+':'+d]||'';
   return `<div class="gs-opts" data-gk="${k}:${d}"><div class="gs-act"><button class="linkbtn" data-gall="${k}:${d}" ${sel?'':'disabled'}>Todas</button><button class="linkbtn" data-gnone="${k}:${d}" ${on?'':'disabled'}>Ninguna</button><span>${fmt(on)} de ${fmt(it.length)}</span></div>
@@ -2157,18 +2193,18 @@ function refreshGeo(){
   $('#heroBig').textContent=fmt(tot);$('#heroOf').textContent=`de ${fmt(all)} ubicados en el rango`;
   {const n=S.to-S.from+1,nb=Math.min(n,60),a=new Float64Array(nb);groups.forEach(g=>{const fe=DS[g.k].fecha;for(const i of g.idx)a[Math.min(nb-1,Math.floor((fe[i]-S.from)/n*nb))]++});
    const mx=Math.max(1,...a);$('#spark').innerHTML=`<polyline points="${Array.from(a,(v,i)=>`${(i/(nb-1||1)*218+1).toFixed(1)},${(50-v/mx*46).toFixed(1)}`).join(' ')}" fill="none" stroke="var(--accent)" stroke-width="1.8" vector-effect="non-scaling-stroke"/>`}
-  setPoints(GM,groups,S.geoMode);viaHighlight();viaSide();
+  setPoints(GM,groups,S.geoMode);viaSide('geo',$('#g_vias'),GM,GEO_L.filter(([k])=>S.geoOn[k]).map(([k])=>[k,rows(k)]),refreshGeo);
   geoSide(lcn);
   // chips
   const chips=[];if(S.q.acc)chips.push(`<span class="chip"><i>Búsqueda:</i> “${esc(S.q.acc)}”<button aria-label="Quitar búsqueda" data-rmq="1">${ic('x',11)}</button></span>`);
   GEO_L.forEach(([k,l])=>{for(const [d,a] of Object.entries(S.f[k])){const dm=DS[k].dims[d];if(!a.some(x=>x))chips.push(`<span class="chip"><i>${esc(MODS[k].title)} · ${LBL[d]}:</i> ninguna<button aria-label="Quitar" data-rmall="${k}:${d}">${ic('x',11)}</button></span>`);a.forEach((v,c)=>{if(v)chips.push(`<span class="chip"><i>${esc(MODS[k].title)} · ${LBL[d]}:</i> ${esc(dm.fixed?dm.dict[c]:title(dm.dict[c]))}<button aria-label="Quitar" data-rm="${k}:${d}:${c}">${ic('x',11)}</button></span>`)})}});
-  (S.geoRoads||[]).forEach(id=>{const v=vias().list[id];if(v)chips.push(`<span class="chip"><i>Vialidad · ${S.geoRoadDist||100} m:</i> ${esc(v.txt)}<button aria-label="Quitar" data-rmvia="${id}">${ic('x',11)}</button></span>`)});
+  chips.push(...viaChips('geo'));
   $('#chips').innerHTML=chips.length?chips.join('')+`<button class="linkbtn" id="clearAll">Limpiar todo</button>`:'<span class="none">Sin filtros: se muestran todos los puntos del rango seleccionado.</span>';
   $('#chips').querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{const [k,d,c]=b.dataset.rm.split(':');toggle(k,d,+c)});
   $('#chips').querySelectorAll('[data-rmall]').forEach(b=>b.onclick=()=>{const [k,d]=b.dataset.rmall.split(':');setCodes(k,d,null);S.page[k]=0;refreshGeo()});
   $('#chips').querySelectorAll('[data-rmq]').forEach(b=>b.onclick=()=>{setSearch(GEO_L.map(g=>g[0]),'');$('#q_geo').value='';refreshGeo()});
-  $('#chips').querySelectorAll('[data-rmvia]').forEach(b=>b.onclick=()=>{S.geoRoads=(S.geoRoads||[]).filter(x=>x!==+b.dataset.rmvia);refreshGeo()});
-  const ca=$('#clearAll');if(ca)ca.onclick=()=>{GEO_L.forEach(([k])=>S.f[k]={});S.geoRoads=[];setSearch(GEO_L.map(g=>g[0]),'');$('#q_geo').value='';refreshGeo()};
+  wireViaChips($('#chips'),refreshGeo);
+  const ca=$('#clearAll');if(ca)ca.onclick=()=>{GEO_L.forEach(([k])=>S.f[k]={});vst('geo').sel=[];setSearch(GEO_L.map(g=>g[0]),'');$('#q_geo').value='';refreshGeo()};
   geoTable();
   if(popState)fillPop();
 }
@@ -2232,7 +2268,7 @@ function mapState(k){
   const ks=k==='geo'?GEO_L.map(g=>g[0]):k==='general'?[]:[k];const f={};
   ks.forEach(m=>{const o={};for(const [d,a] of Object.entries(S.f[m]))o[d]=Array.from(a).flatMap((v,i)=>v?[i]:[]);if(Object.keys(o).length)f[m]=o});
   const q=ks.length&&S.q[ks[0]]?S.q[ks[0]]:'';
-  return {k,from:S.from,to:S.to,f,q,geoOn:S.geoOn,geoMode:S.geoMode,geoOpen:S.geoOpen,gLayers:S.gLayers,mapMode:S.mapMode[k],mapColor:S.mapColor[k],geoRoads:S.geoRoads,geoRoadDist:S.geoRoadDist,viaOpen:S.viaOpen};
+  return {k,from:S.from,to:S.to,f,q,geoOn:S.geoOn,geoMode:S.geoMode,geoOpen:S.geoOpen,gLayers:S.gLayers,mapMode:S.mapMode[k],mapColor:S.mapColor[k],vr:S.vr&&S.vr[k]};
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-fullmap]');if(!b)return;
   window.open(location.pathname+'?mapa='+encodeURIComponent(JSON.stringify(mapState(b.dataset.fullmap))),'_blank','noopener')});
@@ -2243,7 +2279,7 @@ if(FULL&&MODS[FULL.k]){
   for(const [m,o] of Object.entries(FULL.f||{}))if(DS[m])for(const [d,codes] of Object.entries(o))if(DS[m].dims[d])setCodes(m,d,codes);
   if(FULL.q)setSearch(k==='geo'?GEO_L.map(g=>g[0]):[k],FULL.q);
   if(FULL.geoOn)S.geoOn=FULL.geoOn;if(FULL.geoMode)S.geoMode=FULL.geoMode;if(FULL.geoOpen)S.geoOpen=FULL.geoOpen;if(FULL.gLayers)S.gLayers=FULL.gLayers;
-  if(Array.isArray(FULL.geoRoads))S.geoRoads=FULL.geoRoads;if(FULL.geoRoadDist)S.geoRoadDist=FULL.geoRoadDist;if(FULL.viaOpen)S.viaOpen=FULL.viaOpen;
+  if(FULL.vr&&Array.isArray(FULL.vr.sel))(S.vr||(S.vr={}))[k]=FULL.vr;
   if(FULL.mapMode)S.mapMode[k]=FULL.mapMode;if(FULL.mapColor)S.mapColor[k]=FULL.mapColor;
   const w=document.querySelector('.topbar .where');if(w)w.textContent=MODS[k].title+' · '+dLong(S.from)+' – '+dLong(S.to);
   document.title=MODS[k].title+' · Mapa · Argos·Vialidad';
