@@ -945,6 +945,10 @@ tbody tr:hover td{background:var(--panel2)}
 button.lgi:hover{border-color:var(--accent)}
 .lgi.off{opacity:.4}
 .fmbtn{display:inline-flex;align-items:center;gap:6px}
+.mperiod{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:var(--muted)}
+.mperiod svg{color:var(--accent)}
+.mperiod select,.mperiod input{background:var(--panel2);border:1px solid var(--line2);border-radius:9px;padding:4px 8px;font:600 12px var(--font);color:var(--fg)}
+.mperiod input{width:132px}
 .fullmap .side,.fullmap .mnav,.fullmap #menuBtn,.fullmap .fmbtn,.fullmap [data-mod]{display:none!important}
 .fullmap .shell{grid-template-columns:minmax(0,1fr)}
 .fullmap main{padding:10px 12px;gap:0}
@@ -1572,7 +1576,7 @@ function chartCard(k,ch,i){
     tools=`<select id="pvr_${k}" aria-label="Filas">${opts(pv.r)}</select><span class="hint">×</span><select id="pvc_${k}" aria-label="Columnas">${opts(pv.c)}</select>`}
   const sub=ch.sub||(ch.t==='hbar'||ch.t==='bar'||ch.t==='donut'?'Clic para filtrar':ch.t==='pivot'?'Clic en una celda para filtrar ambas dimensiones':ch.t==='table'?'Registros que cumplen los filtros · escribe en la fila de filtros de cada columna · clic en una fila para ver la ficha':ch.t==='people'?'Conductores y vehículos de los accidentes filtrados · busca por nombre, placa o teléfono':ch.t==='map'?'Clic en un punto para ver la ficha · activa o desactiva conceptos en la barra lateral':'');
   const body=ch.t==='pivot'?`<div class="tw" id="${id}"></div>`:(ch.t==='table'||ch.t==='people')?`<div id="${id}"></div>`:ch.t==='map'?`<div class="gwrap sm${vopen(k)?' vopen':''}" id="${id}_wrap" style="--tone:${MODS[k].tone}"><aside class="gside" id="${id}_side" style="max-height:${h}px" aria-label="Conceptos del mapa"></aside><div class="lmap" id="${id}" style="height:${h}px"></div><aside class="gside vside drawer" id="${id}_vias" aria-label="Vialidades principales"></aside></div>`:`<div class="ch" id="${id}" style="height:${h}px"></div>`;
-  return `<section class="card cc s${ch.span}${ch.t==='map'?' mapcard':''}" data-ci="${i}"><div class="hd"><div><h3>${ic(icn,16)}${esc(ch.title)}</h3><div class="sub">${esc(sub)}</div></div><div class="tools">${tools}</div></div>${body}</section>`;
+  return `<section class="card cc s${ch.span}${ch.t==='map'?' mapcard':''}" data-ci="${i}"><div class="hd"><div><h3>${ic(icn,16)}${esc(ch.title)}</h3><div class="sub">${esc(sub)}</div>${ch.t==='map'?periodCtl():''}</div><div class="tools">${tools}</div></div>${body}</section>`;
 }
 function pivotDims(k){const g=MODS[k].groups.flatMap(x=>x[2]);return g}
 
@@ -1628,6 +1632,27 @@ function wireModule(k){
   main.querySelectorAll('.pill[data-dim]').forEach(b=>b.onclick=e=>{e.stopPropagation();openPop(k,b.dataset.dim,b)});
   wireDates();
 }
+/* ---------- Periodo en el encabezado de cada mapa (también en pantalla completa) */
+const MESES_L=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const PRESETS={all:[0,364],h1:[0,180],h2:[181,364],q1:[0,89],q2:[90,180],q3:[181,272],q4:[273,364]};
+MESES_L.forEach((_,m)=>{PRESETS['m'+m]=[(Date.UTC(2023,m,1)-DAY0)/864e5,(Date.UTC(2023,m+1,1)-DAY0)/864e5-1]});
+const PGRUPOS=[['Año',[['all','Todo 2023']]],['Semestres',[['h1','1er semestre'],['h2','2do semestre']]],
+  ['Trimestres',[['q1','1er trimestre'],['q2','2do trimestre'],['q3','3er trimestre'],['q4','4to trimestre']]],['Meses',MESES_L.map((l,m)=>['m'+m,l])]];
+function periodCtl(){
+  const p=PRESETS[S.preset]?S.preset:'custom';
+  return `<div class="mperiod">${ic('cal',13)}<select data-period aria-label="Periodo">${PGRUPOS.map(([g,ops])=>`<optgroup label="${g}">${ops.map(([v,l])=>`<option value="${v}" ${v===p?'selected':''}>${l}</option>`).join('')}</optgroup>`).join('')}<option value="custom" ${p==='custom'?'selected':''} hidden>Personalizado</option></select>
+    <input type="date" data-pfrom min="2023-01-01" max="2023-12-31" value="${dIso(S.from)}" aria-label="Desde"><span>–</span><input type="date" data-pto min="2023-01-01" max="2023-12-31" value="${dIso(S.to)}" aria-label="Hasta"></div>`;
+}
+function setRange(a,b,preset){S.from=Math.max(0,Math.min(a,b));S.to=Math.min(364,Math.max(a,b));S.preset=preset;for(const k in S.page)S.page[k]=0;refreshDates();S.mod==='general'?render():refresh()}
+document.addEventListener('change',e=>{
+  const s=e.target.closest('[data-period]');if(s){const r=PRESETS[s.value];if(r)setRange(r[0],r[1],s.value);return}
+  const d=e.target.closest('[data-pfrom],[data-pto]');if(!d)return;const box=d.closest('.mperiod'),day=v=>Math.round((Date.parse(v+'T00:00:00Z')-DAY0)/864e5);
+  const a=day(box.querySelector('[data-pfrom]').value),b=day(box.querySelector('[data-pto]').value);if(!isNaN(a)&&!isNaN(b))setRange(a,b,'custom');
+});
+function paintPeriods(){
+  document.querySelectorAll('.mperiod').forEach(box=>{box.querySelector('[data-period]').value=PRESETS[S.preset]?S.preset:'custom';box.querySelector('[data-pfrom]').value=dIso(S.from);box.querySelector('[data-pto]').value=dIso(S.to)});
+  const w=document.querySelector('.fullmap .topbar .where');if(w&&MODS[S.mod])w.textContent=MODS[S.mod].title+' · '+dLong(S.from)+' – '+dLong(S.to);
+}
 function wireDates(){
   document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{const P={all:[0,364],q1:[0,89],q2:[90,180],q3:[181,272],q4:[273,364],h1:[0,180],h2:[181,364]}[b.dataset.preset];S.from=P[0];S.to=P[1];S.preset=b.dataset.preset;for(const k in S.page)S.page[k]=0;refreshDates();S.mod==='general'?render():refresh()});
   const f=$('#dFrom'),t=$('#dTo');
@@ -1639,6 +1664,7 @@ function refreshDates(){
   const f=$('#dFrom'),t=$('#dTo');if(f){f.value=dIso(S.from);t.value=dIso(S.to)}
   document.querySelectorAll('[data-preset]').forEach(b=>b.classList.toggle('on',b.dataset.preset===S.preset));
   const r=$('#rangeTxt');if(r)r.textContent=`${dLong(S.from)} – ${dLong(S.to)} · ${S.to-S.from+1} días`;
+  paintPeriods();
 }
 
 function refresh(){
@@ -1754,7 +1780,7 @@ function renderGeneral(){
     <div class="kpi"><div class="l">Detenidos</div><div class="v num">${fmt(R.det.length)}</div><div class="s">${fmt(R.cor.length)} vehículos al corralón</div></div></section>
    <div class="tiles">${GEN.filter(([k])=>k!=='bit').map(([k,l])=>`<button class="tile" data-mod="${k}" style="--tone:${MODS[k].tone}"><span class="h">${ic(MODS[k].icon,17)}${l}</span><span class="v num">${fmt(R[k].length)}</span><svg class="mb" viewBox="0 0 240 38" preserveAspectRatio="none" id="mb_${k}" aria-hidden="true"></svg><span class="s">${esc(MODS[k].sub)} · por mes</span><span class="go">Abrir módulo →</span></button>`).join('')}</div>
    <div class="grid">
-    <section class="card cc s8 mapcard"><div class="hd"><div><h3>${ic('map',16)}Mapa operativo integrado</h3><div class="sub">Clic en un punto para ver su ficha completa</div></div><div class="tools">${vtogBtn('general','g_map_wrap')}<button class="linkbtn fmbtn" data-fullmap="general" title="Abrir el mapa en una pestaña nueva, a pantalla completa">${FMI} Pantalla completa</button><button class="linkbtn" data-mod="geo">${ic('map',13)} Abrir mapa completo</button></div></div><div class="mlegend" id="g_map_lg"></div><div class="gwrap one${vopen('general')?' vopen':''}" id="g_map_wrap"><div class="lmap" id="g_map" style="height:460px"></div><aside class="gside vside drawer" id="g_map_vias" aria-label="Vialidades principales"></aside></div></section>
+    <section class="card cc s8 mapcard"><div class="hd"><div><h3>${ic('map',16)}Mapa operativo integrado</h3><div class="sub">Clic en un punto para ver su ficha completa</div>${periodCtl()}</div><div class="tools">${vtogBtn('general','g_map_wrap')}<button class="linkbtn fmbtn" data-fullmap="general" title="Abrir el mapa en una pestaña nueva, a pantalla completa">${FMI} Pantalla completa</button><button class="linkbtn" data-mod="geo">${ic('map',13)} Abrir mapa completo</button></div></div><div class="mlegend" id="g_map_lg"></div><div class="gwrap one${vopen('general')?' vopen':''}" id="g_map_wrap"><div class="lmap" id="g_map" style="height:460px"></div><aside class="gside vside drawer" id="g_map_vias" aria-label="Vialidades principales"></aside></div></section>
     <section class="card cc s4"><div class="hd"><div><h3>${ic('clock',16)}Perfil horario</h3><div class="sub">Porcentaje de cada base por hora del día</div></div></div><div class="ch" id="g_hour" style="height:460px"></div></section>
     <section class="card cc s6"><div class="hd"><div><h3>${ic('pin',16)}Carga por sector</h3><div class="sub">Registros por sector en las bases con sector</div></div></div><div class="ch" id="g_sec" style="height:360px"></div></section>
     <section class="card cc s6"><div class="hd"><div><h3>${ic('crash',16)}Severidad mensual de accidentes</h3><div class="sub">Lesionados y fallecidos por mes</div></div></div><div class="ch" id="g_sev" style="height:360px"></div></section>
@@ -2042,7 +2068,7 @@ function renderGeo(){
     <div class="searchbar">${ic('filter',15)}<input type="search" id="q_geo" placeholder="Buscar en todas las capas: nombre, placa, serie, domicilio, colonia, agente…" value="${esc(S.q.acc||'')}" autocomplete="off" aria-label="Buscar"></div>
     <div class="activebar"><span class="ttl">Filtros seleccionados</span><span class="showing">Filtra capas y conceptos desde la barra lateral del mapa · se comparten con cada módulo</span><div class="chips" id="chips"></div></div>
    </section>
-   <div class="grid"><section class="card cc mapcard"><div class="hd"><div><h3>${ic('map',16)}Mapa de la ciudad</h3><div class="sub">Clic en un punto para ver la ficha · pasa el cursor sobre una avenida para ver su nombre</div></div>
+   <div class="grid"><section class="card cc mapcard"><div class="hd"><div><h3>${ic('map',16)}Mapa de la ciudad</h3><div class="sub">Clic en un punto para ver la ficha · pasa el cursor sobre una avenida para ver su nombre</div>${periodCtl()}</div>
      <div class="tools"><div class="minis">${MAPMODES.map(([v,l])=>`<button data-gmode="${v}" class="${S.geoMode===v?'on':''}">${l}</button>`).join('')}</div><button class="linkbtn" id="gFit">Ajustar a resultados</button><button class="linkbtn fmbtn" data-fullmap="geo" title="Abrir el mapa en una pestaña nueva, a pantalla completa">${FMI} Pantalla completa</button></div></div>
      <div class="gwrap two"><aside class="gside" id="g_side" aria-label="Capas y conceptos"></aside><div class="lmap" id="geo_map" style="height:min(680px,72vh)"></div><aside class="gside vside" id="g_vias" aria-label="Vialidades principales"></aside></div></section>
    <section class="card cc"><div class="hd"><div><h3>${ic('table',16)}Registros georreferenciados</h3><div class="sub">Clic en una fila para ubicarla en el mapa · filtra por columna o busca arriba</div></div>
