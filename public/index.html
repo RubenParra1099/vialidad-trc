@@ -944,6 +944,9 @@ tbody tr:hover td{background:var(--panel2)}
 .lgi b{color:var(--muted);font-weight:700}
 button.lgi:hover{border-color:var(--accent)}
 .lgi.off{opacity:.4}
+.lgconc{display:grid;gap:6px}
+.lgrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding-left:10px;border-left:3px solid var(--tone)}
+.lgrow .lt{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--muted);margin-right:2px}
 .lgn{font-size:11.5px;color:var(--muted);margin-right:4px}
 .lyr{display:inline-flex;align-items:center;gap:8px;font-weight:700;cursor:pointer}
 .lyr input{accent-color:var(--accent);width:15px;height:15px;margin:0}
@@ -1842,6 +1845,8 @@ function focusRecord(o,k,i){
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-detail]');if(b){const [k,i]=b.dataset.detail.split(':');openDetail(k,+i)}});
 
+/* leyendas: el primer clic oculta el concepto; los siguientes lo activan o desactivan */
+function legendToggle(k,d,c){if(!getSel(k,d))setCodes(k,d,DS[k].dims[d].dict.map((_,j)=>j).filter(j=>j!==c));else toggle(k,d,c,true);S.page[k]=0}
 function updateModuleMap(k){
   const o=MM[k];if(!o)return;const ch=o.ch;const dim=S.mapColor[k]||ch.colorBy[0];const dm=DS[k].dims[dim];const idx=rows(k);const mode=S.mapMode[k]||'cluster';
   const n=setPoints(o,[{k,idx,color:i=>colorOf(dm,dm.c[i])}],mode);
@@ -1851,8 +1856,7 @@ function updateModuleMap(k){
   const lg=document.getElementById(o.el.id+'_lg');
   lg.innerHTML=`<span class="lgn">${fmt(n)} con ubicación de ${fmt(idx.length)}</span>`+(mode==='heat'?'':items.slice(0,12).map(x=>`<button class="lgi${sel&&!sel[x.code]?' off':''}" data-code="${x.code}"><i style="background:${colorOf(dm,x.code)}"></i>${esc(dm.fixed?x.name:title(x.name))} <b class="num">${fmt(x.v)}</b></button>`).join(''));
   lg.innerHTML+=(mode!=='heat'&&sel?'<button class="linkbtn" data-lgall="1">Mostrar todos</button>':'')+(mode==='heat'?'':'<span class="lgn">Clic para activar o desactivar</span>');
-  lg.querySelectorAll('[data-code]').forEach(b=>b.onclick=()=>{const c=+b.dataset.code;
-    if(!getSel(k,dim)){setCodes(k,dim,dm.dict.map((_,j)=>j).filter(j=>j!==c));S.page[k]=0;refresh()}else toggle(k,dim,c)});
+  lg.querySelectorAll('[data-code]').forEach(b=>b.onclick=()=>{legendToggle(k,dim,+b.dataset.code);refresh()});
   const ra=lg.querySelector('[data-lgall]');if(ra)ra.onclick=()=>{setCodes(k,dim,null);S.page[k]=0;refresh()};
 }
 
@@ -1948,7 +1952,7 @@ function renderGeo(){
    </section>
    <div class="grid"><section class="card cc"><div class="hd"><div><h3>${ic('map',16)}Mapa de la ciudad</h3><div class="sub">Clic en un punto para ver la ficha · pasa el cursor sobre una avenida para ver su nombre</div></div>
      <div class="tools"><div class="minis">${MAPMODES.map(([v,l])=>`<button data-gmode="${v}" class="${S.geoMode===v?'on':''}">${l}</button>`).join('')}</div><button class="linkbtn" id="gFit">Ajustar a resultados</button></div></div>
-     <div class="mlegend" id="g_lg"></div><div class="lmap" id="geo_map" style="height:min(680px,72vh)"></div></section>
+     <div class="mlegend" id="g_lg"></div><div class="lgconc" id="g_lgc"></div><div class="lmap" id="geo_map" style="height:min(680px,72vh)"></div></section>
    <section class="card cc"><div class="hd"><div><h3>${ic('table',16)}Registros georreferenciados</h3><div class="sub">Clic en una fila para ubicarla en el mapa · filtra por columna o busca arriba</div></div>
      <div class="tools"><label class="lyr" style="font-size:12px"><input type="checkbox" id="gVis" ${S.geoVisible?'checked':''}> Solo el área visible del mapa</label></div></div><div id="geo_tbl"></div></section></div>`;
   wireDates();
@@ -1965,16 +1969,23 @@ function renderGeo(){
 }
 function refreshGeo(){
   memo.clear();refreshDates();
-  let tot=0,all=0;const groups=[];
+  let tot=0,all=0;const groups=[],lcn={};
   GEO_L.forEach(([k,l,dims])=>{const idx=rows(k);const la=DS[k].vals.lat;let n=0;for(const i of idx)if(la[i]!=null)n++;
-    $('#lc_'+k).textContent=`${fmt(n)} puntos`;if(S.geoOn[k]){tot+=n;groups.push({k,idx,color:()=>LAYC(k)})}
+    $('#lc_'+k).textContent=`${fmt(n)} puntos`;lcn[k]=n;if(S.geoOn[k]){tot+=n;groups.push({k,idx,color:()=>LAYC(k)})}
     let a=0;const fe=DS[k].fecha;for(let i=0;i<DS[k].n;i++)if(la[i]!=null&&fe[i]>=S.from&&fe[i]<=S.to)a++;all+=a;
     dims.forEach(d=>{const b=$(`#pill_${k}_${d}`);const s=getSel(k,d);const c=s?s.reduce((x,y)=>x+y,0):0;b.classList.toggle('act',c>0);b.innerHTML=`${LBL[d]}${c?` <span class="cnt">${c}</span>`:''} ${ic('down',13)}`})});
   $('#heroBig').textContent=fmt(tot);$('#heroOf').textContent=`de ${fmt(all)} ubicados en el rango`;
   {const n=S.to-S.from+1,nb=Math.min(n,60),a=new Float64Array(nb);groups.forEach(g=>{const fe=DS[g.k].fecha;for(const i of g.idx)a[Math.min(nb-1,Math.floor((fe[i]-S.from)/n*nb))]++});
    const mx=Math.max(1,...a);$('#spark').innerHTML=`<polyline points="${Array.from(a,(v,i)=>`${(i/(nb-1||1)*218+1).toFixed(1)},${(50-v/mx*46).toFixed(1)}`).join(' ')}" fill="none" stroke="var(--accent)" stroke-width="1.8" vector-effect="non-scaling-stroke"/>`}
   setPoints(GM,groups,S.geoMode);
-  $('#g_lg').innerHTML=GEO_L.filter(([k])=>S.geoOn[k]).map(([k,l])=>`<span class="lgi static"><i style="background:${LAYC(k)}"></i>${l}</span>`).join('')+(S.geoMode==='heat'?'<span class="lgn">Mapa de calor: más intenso donde se concentran los registros</span>':'');
+  $('#g_lg').innerHTML=GEO_L.map(([k,l])=>`<button class="lgi${S.geoOn[k]?'':' off'}" data-glay="${k}" aria-pressed="${!!S.geoOn[k]}" title="Clic para ${S.geoOn[k]?'ocultar':'mostrar'}"><i style="background:${LAYC(k)}"></i>${l} <b class="num">${fmt(lcn[k])}</b></button>`).join('')+'<span class="lgn">'+(S.geoMode==='heat'?'Mapa de calor: más intenso donde se concentran los registros · ':'')+'Clic en una capa o en un concepto para activar o desactivar</span>';
+  {const wrap=$('#g_lgc');wrap.innerHTML=GEO_L.filter(([k])=>S.geoOn[k]).map(([k,l,dims])=>{const d=dims[0],dm=DS[k].dims[d],sel=getSel(k,d);
+     const la=DS[k].vals.lat,cnt=new Float64Array(dm.dict.length);for(const i of rows(k,[d]))if(la[i]!=null)cnt[dm.c[i]]++;
+     let it=dm.dict.map((name,code)=>({name,code,v:cnt[code]})).filter(x=>x.v>0||(sel&&sel[x.code]));const ord=ORDER[d];it.sort(ord?(a,b)=>ord.indexOf(a.name)-ord.indexOf(b.name):(a,b)=>b.v-a.v);
+     return `<div class="lgrow" style="--tone:${LAYC(k)}"><span class="lt"><i style="background:${LAYC(k)}"></i>${l} · ${LBL[d]}</span>${it.slice(0,10).map(x=>`<button class="lgi${sel&&!sel[x.code]?' off':''}" data-gc="${k}:${d}:${x.code}">${esc(dm.fixed?x.name:title(x.name))} <b class="num">${fmt(x.v)}</b></button>`).join('')}${sel?`<button class="linkbtn" data-gcall="${k}:${d}">Mostrar todos</button>`:''}</div>`}).join('');
+   wrap.querySelectorAll('[data-gc]').forEach(b=>b.onclick=()=>{const [k,d,c]=b.dataset.gc.split(':');legendToggle(k,d,+c);refreshGeo()});
+   wrap.querySelectorAll('[data-gcall]').forEach(b=>b.onclick=()=>{const [k,d]=b.dataset.gcall.split(':');setCodes(k,d,null);S.page[k]=0;refreshGeo()})}
+  $('#g_lg').querySelectorAll('[data-glay]').forEach(b=>b.onclick=()=>{const k=b.dataset.glay;S.geoOn[k]=!S.geoOn[k];const cb=document.querySelector(`[data-layer="${k}"]`);if(cb)cb.checked=S.geoOn[k];refreshGeo()});
   // chips
   const chips=[];if(S.q.acc)chips.push(`<span class="chip"><i>Búsqueda:</i> “${esc(S.q.acc)}”<button aria-label="Quitar búsqueda" data-rmq="1">${ic('x',11)}</button></span>`);
   GEO_L.forEach(([k,l])=>{for(const [d,a] of Object.entries(S.f[k])){const dm=DS[k].dims[d];a.forEach((v,c)=>{if(v)chips.push(`<span class="chip"><i>${esc(MODS[k].title)} · ${LBL[d]}:</i> ${esc(dm.fixed?dm.dict[c]:title(dm.dict[c]))}<button aria-label="Quitar" data-rm="${k}:${d}:${c}">${ic('x',11)}</button></span>`)})}});
