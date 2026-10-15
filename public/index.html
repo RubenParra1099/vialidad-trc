@@ -1788,7 +1788,7 @@ function renderGeneral(){
     <div class="kpi"><div class="l">Detenidos</div><div class="v num">${fmt(R.det.length)}</div><div class="s">${fmt(R.cor.length)} vehículos al corralón</div></div></section>
    <div class="tiles">${GEN.filter(([k])=>k!=='bit').map(([k,l])=>`<button class="tile" data-mod="${k}" style="--tone:${MODS[k].tone}"><span class="h">${ic(MODS[k].icon,17)}${l}</span><span class="v num">${fmt(R[k].length)}</span><svg class="mb" viewBox="0 0 240 38" preserveAspectRatio="none" id="mb_${k}" aria-hidden="true"></svg><span class="s">${esc(MODS[k].sub)} · por mes</span><span class="go">Abrir módulo →</span></button>`).join('')}</div>
    <div class="grid">
-    <section class="card cc s8 mapcard"><div class="hd"><div><h3>${ic('map',16)}Mapa operativo integrado</h3><div class="sub">Clic en un punto para ver su ficha completa</div>${periodCtl()}</div><div class="tools">${vtogBtn('general','g_map_wrap')}<button class="linkbtn fmbtn" data-fullmap="general" title="Abrir el mapa en una pestaña nueva, a pantalla completa">${FMI} Pantalla completa</button><button class="linkbtn" data-mod="geo">${ic('map',13)} Abrir mapa completo</button></div></div><div class="mlegend" id="g_map_lg"></div><div class="gwrap one${vopen('general')?' vopen':''}" id="g_map_wrap"><div class="lmap" id="g_map" style="height:460px"></div><aside class="gside vside drawer" id="g_map_vias" aria-label="Vialidades principales"></aside></div></section>
+    <section class="card cc s8 mapcard"><div class="hd"><div><h3>${ic('map',16)}Mapa operativo integrado</h3><div class="sub">Clic en un punto para ver su ficha completa</div>${periodCtl()}</div><div class="tools">${vtogBtn('general','g_map_wrap')}<button class="linkbtn fmbtn" data-fullmap="general" title="Abrir el mapa en una pestaña nueva, a pantalla completa">${FMI} Pantalla completa</button><button class="linkbtn" data-mod="geo">${ic('map',13)} Abrir mapa completo</button></div></div><div class="gwrap sm${vopen('general')?' vopen':''}" id="g_map_wrap"><aside class="gside" id="g_map_side" style="max-height:460px" aria-label="Capas y conceptos"></aside><div class="lmap" id="g_map" style="height:460px"></div><aside class="gside vside drawer" id="g_map_vias" aria-label="Vialidades principales"></aside></div></section>
     <section class="card cc s4"><div class="hd"><div><h3>${ic('clock',16)}Perfil horario</h3><div class="sub">Porcentaje de cada base por hora del día</div></div></div><div class="ch" id="g_hour" style="height:460px"></div></section>
     <section class="card cc s6"><div class="hd"><div><h3>${ic('pin',16)}Carga por sector</h3><div class="sub">Registros por sector en las bases con sector</div></div></div><div class="ch" id="g_sec" style="height:360px"></div></section>
     <section class="card cc s6"><div class="hd"><div><h3>${ic('crash',16)}Severidad mensual de accidentes</h3><div class="sub">Lesionados y fallecidos por mes</div></div></div><div class="ch" id="g_sev" style="height:360px"></div></section>
@@ -1804,11 +1804,12 @@ function renderGeneral(){
     $('#mb_'+k).innerHTML=Array.from(a,(v,i)=>`<rect x="${(i*bw+2).toFixed(1)}" y="${(38-v/mx*36).toFixed(1)}" width="${(bw-4).toFixed(1)}" height="${(v/mx*36).toFixed(1)}" rx="2" style="fill:${MODS[k].tone}" opacity="${v?0.9:0.2}"><title>${MESES[i]}: ${fmt(v)}</title></rect>`).join('')});
   // mapa integrado
   {const o=createMap($('#g_map'));const L4=GEO_L.slice(0,4);
-   const G=k=>byMask(R[k],roadMask(k,'general'));
-   const draw=()=>{setPoints(o,L4.filter(([k])=>S.gLayers[k]).map(([k])=>({k,idx:G(k),color:()=>LAYC(k)})),'cluster');
-     const lg=$('#g_map_lg');lg.innerHTML=L4.map(([k,l])=>`<button class="lgi${S.gLayers[k]?'':' off'}" data-glay="${k}" aria-pressed="${!!S.gLayers[k]}" title="Clic para ${S.gLayers[k]?'ocultar':'mostrar'}"><i style="background:${LAYC(k)}"></i>${l} <b class="num">${fmt(G(k).filter(i=>hasGeo(k,i)).length)}</b></button>`).join('')+'<span class="lgn">Clic para activar o desactivar</span>';
-     lg.querySelectorAll('[data-glay]').forEach(b=>b.onclick=()=>{S.gLayers[b.dataset.glay]=!S.gLayers[b.dataset.glay];draw()});
-     viaSide('general',$('#g_map_vias'),o,L4.filter(([k])=>S.gLayers[k]).map(([k])=>[k,R[k]]),draw)};
+   // capas con los filtros de conceptos (compartidos con cada módulo) y el de vialidades de este mapa
+   const G=k=>byMask(rows(k),roadMask(k,'general'));const GL=GEO_L.slice(0,4);
+   const draw=()=>{memo.clear();setPoints(o,L4.filter(([k])=>S.gLayers[k]).map(([k])=>({k,idx:G(k),color:()=>LAYC(k)})),'cluster');
+     const cn={};GL.forEach(([k])=>{cn[k]=G(k).filter(i=>hasGeo(k,i)).length});
+     layerSide({el:$('#g_map_side'),list:GL,on:S.gLayers,op:S.gOpen||(S.gOpen={acc:'tipo'}),counts:cn,after:draw});
+     viaSide('general',$('#g_map_vias'),o,L4.filter(([k])=>S.gLayers[k]).map(([k])=>[k,rows(k)]),draw)};
    draw()}
   // perfil horario
   const HL=[['acc','Accidentes',TK.cat[1]],['eve','Eventos',TK.cat[2]],['mal','Mal estacionados',TK.cat[5]],['det','Detenidos',TK.cat[4]]];
@@ -2181,7 +2182,7 @@ function viaChips(ctx){const st=vst(ctx);return st.sel.map(id=>{const v=vias().l
 function wireViaChips(box,after){box.querySelectorAll('[data-rmvia]').forEach(b=>b.onclick=()=>{const [ctx,id]=b.dataset.rmvia.split(':');const st=vst(ctx);st.sel=st.sel.filter(x=>x!==+id);after()})}
 /* barras laterales de mapas: casillas de opciones de un concepto (swatch = color en el mapa) */
 function sideOpts(k,d,swatch){
-  const dm=DS[k].dims[d],sel=getSel(k,d),la=DS[k].vals.lat,cnt=new Float64Array(dm.dict.length);const rm=S.mod==='geo'?roadMask(k,'geo'):null;for(const i of rows(k,[d]))if(la[i]!=null&&(!rm||rm[i]))cnt[dm.c[i]]++;
+  const dm=DS[k].dims[d],sel=getSel(k,d),la=DS[k].vals.lat,cnt=new Float64Array(dm.dict.length);const rm=S.mod==='geo'||S.mod==='general'?roadMask(k,S.mod):null;for(const i of rows(k,[d]))if(la[i]!=null&&(!rm||rm[i]))cnt[dm.c[i]]++;
   const it=dm.dict.map((name,code)=>({name,code,v:cnt[code]})).filter(x=>x.v>0||(sel&&sel[x.code]));const ord=ORDER[d];it.sort(ord?(x,y)=>ord.indexOf(x.name)-ord.indexOf(y.name):(x,y)=>y.v-x.v);
   const on=it.filter(x=>!sel||sel[x.code]).length,q=(S.sideQ||{})[k+':'+d]||'';
   return `<div class="gs-opts" data-gk="${k}:${d}"><div class="gs-act"><button class="linkbtn" data-gall="${k}:${d}" ${sel?'':'disabled'}>Todas</button><button class="linkbtn" data-gnone="${k}:${d}" ${on?'':'disabled'}>Ninguna</button><span>${fmt(on)} de ${fmt(it.length)}</span></div>
@@ -2199,24 +2200,26 @@ function wireSideOpts(el,after){
 }
 const CHEV=o=>`<svg class="chev${o?' o':''}" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>`;
 /* barra lateral del mapa: capa → concepto → opciones */
-function geoSide(lcn){
-  const el=$('#g_side');if(!el)return;const st=el.scrollTop;const op=S.geoOpen||(S.geoOpen={acc:'tipo'});
-  el.innerHTML=`<div class="gs-hd"><b>Capas y conceptos</b><span>Activa una capa y abre un concepto para elegir sus opciones</span></div>`+GEO_L.map(([k,l,dims])=>{
-    const on=!!S.geoOn[k],open=on&&op[k];
+// cfg: {el, list:[[k,título,dims]], on:{k:bool}, op:{k:dim abierto}, counts:{k:n}, after, foot}
+function layerSide(cfg){
+  const {el,list,on:ON,op,counts,after}=cfg;if(!el)return;const st=el.scrollTop;
+  el.innerHTML=`<div class="gs-hd"><b>Capas y conceptos</b><span>Activa una capa y abre un concepto para elegir sus opciones</span></div>`+list.map(([k,l,dims])=>{
+    const on=!!ON[k],open=on&&op[k];
     const nAct=dims.reduce((t,d)=>t+(getSel(k,d)?1:0),0);
     let body='';
     if(open)body=`<div class="gs-dims">${dims.map(d=>{const dm=DS[k].dims[d],sel=getSel(k,d);const dOpen=op[k]===d;
       const nOff=sel?dm.dict.reduce((t,_,j)=>t+(sel[j]?0:1),0):0;
-      let opts='';
-      if(dOpen)opts=sideOpts(k,d);
-      return `<button class="gs-dim${dOpen?' on':''}" data-gdim="${k}:${d}" aria-expanded="${dOpen}">${CHEV(dOpen)}<span>${LBL[d]}</span>${nOff?`<em>${fmt(nOff)} ocultas</em>`:''}</button>${opts}`}).join('')}</div>`;
-    return `<div class="gs-lay${on?'':' off'}" style="--tone:${LAYC(k)}"><div class="gs-row"><button class="gs-sw" data-gsw="${k}" role="switch" aria-checked="${on}" title="${on?'Ocultar':'Mostrar'} capa"><i></i></button><button class="gs-name" data-gexp="${k}" aria-expanded="${!!open}" ${on?'':'disabled'}><span>${l}</span><b class="num">${fmt(lcn[k])}</b>${nAct?`<em>${nAct} filtro${nAct>1?'s':''}</em>`:''}${on?CHEV(open):''}</button></div>${body}</div>`}).join('')
-    +(S.geoMode==='heat'?'<div class="gs-ft">Mapa de calor: más intenso donde se concentran los registros</div>':'');
+      return `<button class="gs-dim${dOpen?' on':''}" data-gdim="${k}:${d}" aria-expanded="${dOpen}">${CHEV(dOpen)}<span>${LBL[d]}</span>${nOff?`<em>${fmt(nOff)} ocultas</em>`:''}</button>${dOpen?sideOpts(k,d):''}`}).join('')}</div>`;
+    return `<div class="gs-lay${on?'':' off'}" style="--tone:${LAYC(k)}"><div class="gs-row"><button class="gs-sw" data-gsw="${k}" role="switch" aria-checked="${on}" title="${on?'Ocultar':'Mostrar'} capa"><i></i></button><button class="gs-name" data-gexp="${k}" aria-expanded="${!!open}" ${on?'':'disabled'}><span>${l}</span><b class="num">${fmt(counts[k]||0)}</b>${nAct?`<em>${nAct} filtro${nAct>1?'s':''}</em>`:''}${on?CHEV(open):''}</button></div>${body}</div>`}).join('')+(cfg.foot||'');
   el.scrollTop=st;
-  el.querySelectorAll('[data-gsw]').forEach(b=>b.onclick=()=>{const k=b.dataset.gsw;S.geoOn[k]=!S.geoOn[k];refreshGeo()});
-  el.querySelectorAll('[data-gexp]').forEach(b=>b.onclick=()=>{const k=b.dataset.gexp;op[k]=op[k]?null:GEO_L.find(g=>g[0]===k)[2][0];geoSide(lcn)});
-  el.querySelectorAll('[data-gdim]').forEach(b=>b.onclick=()=>{const [k,d]=b.dataset.gdim.split(':');op[k]=op[k]===d?true:d;geoSide(lcn)});
-  wireSideOpts(el,refreshGeo);
+  el.querySelectorAll('[data-gsw]').forEach(b=>b.onclick=()=>{const k=b.dataset.gsw;ON[k]=!ON[k];after()});
+  el.querySelectorAll('[data-gexp]').forEach(b=>b.onclick=()=>{const k=b.dataset.gexp;op[k]=op[k]?null:list.find(g=>g[0]===k)[2][0];layerSide(cfg)});
+  el.querySelectorAll('[data-gdim]').forEach(b=>b.onclick=()=>{const [k,d]=b.dataset.gdim.split(':');op[k]=op[k]===d?true:d;layerSide(cfg)});
+  wireSideOpts(el,after);
+}
+function geoSide(lcn){
+  layerSide({el:$('#g_side'),list:GEO_L,on:S.geoOn,op:S.geoOpen||(S.geoOpen={acc:'tipo'}),counts:lcn,after:refreshGeo,
+    foot:S.geoMode==='heat'?'<div class="gs-ft">Mapa de calor: más intenso donde se concentran los registros</div>':''});
 }
 function refreshGeo(){
   memo.clear();refreshDates();
@@ -2299,20 +2302,21 @@ const FMI='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="c
 /* ---------- Mapa en pestaña aparte (pantalla completa) */
 // El estado viaja en ?mapa=… : módulo, rango, filtros, búsqueda y opciones del mapa.
 function mapState(k){
-  const ks=k==='geo'?GEO_L.map(g=>g[0]):k==='general'?[]:[k];const f={};
+  const ks=k==='geo'?GEO_L.map(g=>g[0]):k==='general'?GEO_L.slice(0,4).map(g=>g[0]):[k];const f={};
   ks.forEach(m=>{const o={};for(const [d,a] of Object.entries(S.f[m]))o[d]=Array.from(a).flatMap((v,i)=>v?[i]:[]);if(Object.keys(o).length)f[m]=o});
   const q=ks.length&&S.q[ks[0]]?S.q[ks[0]]:'';
-  return {k,from:S.from,to:S.to,f,q,geoOn:S.geoOn,geoMode:S.geoMode,geoOpen:S.geoOpen,gLayers:S.gLayers,mapMode:S.mapMode[k],mapColor:S.mapColor[k],vr:S.vr&&S.vr[k]};
+  return {k,from:S.from,to:S.to,preset:S.preset,f,q,geoOn:S.geoOn,geoMode:S.geoMode,geoOpen:S.geoOpen,gLayers:S.gLayers,mapMode:S.mapMode[k],mapColor:S.mapColor[k],vr:S.vr&&S.vr[k],gOpen:S.gOpen};
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-fullmap]');if(!b)return;
   window.open(location.pathname+'?mapa='+encodeURIComponent(JSON.stringify(mapState(b.dataset.fullmap))),'_blank','noopener')});
 const FULL=(()=>{try{const v=new URLSearchParams(location.search).get('mapa');return v?JSON.parse(v):null}catch(e){return null}})();
 if(FULL&&MODS[FULL.k]){
   const k=FULL.k;S.mod=k;document.documentElement.classList.add('fullmap');
-  if(Number.isInteger(FULL.from)&&Number.isInteger(FULL.to)){S.from=Math.max(0,FULL.from);S.to=Math.min(364,FULL.to);S.preset='custom'}
+  if(Number.isInteger(FULL.from)&&Number.isInteger(FULL.to)){S.from=Math.max(0,FULL.from);S.to=Math.min(364,FULL.to);const P=PRESETS[FULL.preset];S.preset=P&&P[0]===S.from&&P[1]===S.to?FULL.preset:'custom'}
   for(const [m,o] of Object.entries(FULL.f||{}))if(DS[m])for(const [d,codes] of Object.entries(o))if(DS[m].dims[d])setCodes(m,d,codes);
   if(FULL.q)setSearch(k==='geo'?GEO_L.map(g=>g[0]):[k],FULL.q);
   if(FULL.geoOn)S.geoOn=FULL.geoOn;if(FULL.geoMode)S.geoMode=FULL.geoMode;if(FULL.geoOpen)S.geoOpen=FULL.geoOpen;if(FULL.gLayers)S.gLayers=FULL.gLayers;
+  if(FULL.gOpen)S.gOpen=FULL.gOpen;
   if(FULL.vr&&Array.isArray(FULL.vr.sel))(S.vr||(S.vr={}))[k]=FULL.vr;
   if(FULL.mapMode)S.mapMode[k]=FULL.mapMode;if(FULL.mapColor)S.mapColor[k]=FULL.mapColor;
   const w=document.querySelector('.topbar .where');if(w)w.textContent=MODS[k].title+' · '+dLong(S.from)+' – '+dLong(S.to);
