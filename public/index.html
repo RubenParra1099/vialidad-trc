@@ -1771,6 +1771,7 @@ addEventListener('scroll',()=>placePop(),{passive:true});addEventListener('resiz
 
 /* ---------- Panel general */
 const GEN=[['acc','Accidentes viales'],['eve','Eventos y apoyos'],['bit','Bitácora'],['cor','Corralón'],['mal','Mal estacionados'],['det','Detenidos']];
+const isFull=()=>document.documentElement.classList.contains('fullmap');
 function renderGeneral(){
   TK=tok();memo.clear();disposeAll();
   const main=$('#main');
@@ -1788,7 +1789,7 @@ function renderGeneral(){
     <div class="kpi"><div class="l">Detenidos</div><div class="v num">${fmt(R.det.length)}</div><div class="s">${fmt(R.cor.length)} vehículos al corralón</div></div></section>
    <div class="tiles">${GEN.filter(([k])=>k!=='bit').map(([k,l])=>`<button class="tile" data-mod="${k}" style="--tone:${MODS[k].tone}"><span class="h">${ic(MODS[k].icon,17)}${l}</span><span class="v num">${fmt(R[k].length)}</span><svg class="mb" viewBox="0 0 240 38" preserveAspectRatio="none" id="mb_${k}" aria-hidden="true"></svg><span class="s">${esc(MODS[k].sub)} · por mes</span><span class="go">Abrir módulo →</span></button>`).join('')}</div>
    <div class="grid">
-    <section class="card cc mapcard"><div class="hd"><div><h3>${ic('map',16)}Mapa operativo integrado</h3><div class="sub">Clic en un punto para ver su ficha completa</div>${periodCtl()}</div><div class="tools">${vtogBtn('general','g_map_wrap')}<button class="linkbtn fmbtn" data-fullmap="general" title="Abrir el mapa en una pestaña nueva, a pantalla completa">${FMI} Pantalla completa</button><button class="linkbtn" data-mod="geo">${ic('map',13)} Abrir mapa completo</button></div></div><div class="gwrap sm${vopen('general')?' vopen':''}" id="g_map_wrap"><aside class="gside" id="g_map_side" style="max-height:560px" aria-label="Capas y conceptos"></aside><div class="lmap" id="g_map" style="height:560px"></div><aside class="gside vside drawer" id="g_map_vias" aria-label="Vialidades principales"></aside></div></section>
+    <section class="card cc mapcard"><div class="hd"><div><h3>${ic('map',16)}Mapa operativo integrado</h3><div class="sub">Clic en un punto para ver su ficha completa</div>${periodCtl()}</div><div class="tools"><button class="linkbtn fmbtn" data-fullmap="general" title="Abrir el mapa en una pestaña nueva, a pantalla completa">${FMI} Pantalla completa</button><button class="linkbtn" data-mod="geo">${ic('map',13)} Abrir mapa completo</button></div></div>${isFull()?`<div class="gwrap sm" id="g_map_wrap"><aside class="gside" id="g_map_side" aria-label="Capas y conceptos"></aside><div class="lmap" id="g_map" style="height:560px"></div><aside class="gside vside drawer" id="g_map_vias" aria-label="Vialidades principales"></aside></div>`:`<div class="mlegend" id="g_map_lg"></div><div class="lmap" id="g_map" style="height:560px"></div>`}</section>
     <section class="card cc s4"><div class="hd"><div><h3>${ic('clock',16)}Perfil horario</h3><div class="sub">Porcentaje de cada base por hora del día</div></div></div><div class="ch" id="g_hour" style="height:360px"></div></section>
     <section class="card cc s4"><div class="hd"><div><h3>${ic('pin',16)}Carga por sector</h3><div class="sub">Registros por sector en las bases con sector</div></div></div><div class="ch" id="g_sec" style="height:360px"></div></section>
     <section class="card cc s4"><div class="hd"><div><h3>${ic('crash',16)}Severidad mensual de accidentes</h3><div class="sub">Lesionados y fallecidos por mes</div></div></div><div class="ch" id="g_sev" style="height:360px"></div></section>
@@ -1804,13 +1805,17 @@ function renderGeneral(){
     $('#mb_'+k).innerHTML=Array.from(a,(v,i)=>`<rect x="${(i*bw+2).toFixed(1)}" y="${(38-v/mx*36).toFixed(1)}" width="${(bw-4).toFixed(1)}" height="${(v/mx*36).toFixed(1)}" rx="2" style="fill:${MODS[k].tone}" opacity="${v?0.9:0.2}"><title>${MESES[i]}: ${fmt(v)}</title></rect>`).join('')});
   // mapa integrado
   {const o=createMap($('#g_map'));const L4=GEO_L.slice(0,4);
-   // capas con los filtros de conceptos (compartidos con cada módulo) y el de vialidades de este mapa
-   const G=k=>byMask(rows(k),roadMask(k,'general'));const GL=GEO_L.slice(0,4);
-   const draw=()=>{memo.clear();setPoints(o,L4.filter(([k])=>S.gLayers[k]).map(([k])=>({k,idx:G(k),color:()=>LAYC(k)})),'cluster');
+   // pantalla completa: barras de capas/conceptos y de vialidades (filtros de conceptos compartidos con cada módulo)
+   const G=k=>byMask(rows(k),roadMask(k,'general')),GL=GEO_L.slice(0,4);
+   const drawFull=()=>{memo.clear();setPoints(o,L4.filter(([k])=>S.gLayers[k]).map(([k])=>({k,idx:G(k),color:()=>LAYC(k)})),'cluster');
      const cn={};GL.forEach(([k])=>{cn[k]=G(k).filter(i=>hasGeo(k,i)).length});
-     layerSide({el:$('#g_map_side'),list:GL,on:S.gLayers,op:S.gOpen||(S.gOpen={acc:'tipo'}),counts:cn,after:draw});
-     viaSide('general',$('#g_map_vias'),o,L4.filter(([k])=>S.gLayers[k]).map(([k])=>[k,rows(k)]),draw)};
-   draw()}
+     layerSide({el:$('#g_map_side'),list:GL,on:S.gLayers,op:S.gOpen||(S.gOpen={acc:'tipo'}),counts:cn,after:drawFull});
+     viaSide('general',$('#g_map_vias'),o,L4.filter(([k])=>S.gLayers[k]).map(([k])=>[k,rows(k)]),drawFull)};
+   if(isFull()){drawFull()}else{
+   const draw=()=>{setPoints(o,L4.filter(([k])=>S.gLayers[k]).map(([k])=>({k,idx:R[k],color:()=>LAYC(k)})),'cluster');
+     const lg=$('#g_map_lg');lg.innerHTML=L4.map(([k,l])=>`<button class="lgi${S.gLayers[k]?'':' off'}" data-glay="${k}" aria-pressed="${!!S.gLayers[k]}" title="Clic para ${S.gLayers[k]?'ocultar':'mostrar'}"><i style="background:${LAYC(k)}"></i>${l} <b class="num">${fmt(R[k].filter(i=>hasGeo(k,i)).length)}</b></button>`).join('')+'<span class="lgn">Clic para activar o desactivar</span>';
+     lg.querySelectorAll('[data-glay]').forEach(b=>b.onclick=()=>{S.gLayers[b.dataset.glay]=!S.gLayers[b.dataset.glay];draw()})};
+   draw()}}
   // perfil horario
   const HL=[['acc','Accidentes',TK.cat[1]],['eve','Eventos',TK.cat[2]],['mal','Mal estacionados',TK.cat[5]],['det','Detenidos',TK.cat[4]]];
   const ho=base();ho.tooltip.trigger='axis';ho.tooltip.valueFormatter=v=>v.toFixed(1)+'%';ho.grid={left:8,right:14,top:60,bottom:4,containLabel:true};
@@ -2302,10 +2307,10 @@ const FMI='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="c
 /* ---------- Mapa en pestaña aparte (pantalla completa) */
 // El estado viaja en ?mapa=… : módulo, rango, filtros, búsqueda y opciones del mapa.
 function mapState(k){
-  const ks=k==='geo'?GEO_L.map(g=>g[0]):k==='general'?GEO_L.slice(0,4).map(g=>g[0]):[k];const f={};
+  const ks=k==='geo'?GEO_L.map(g=>g[0]):k==='general'?[]:[k];const f={};
   ks.forEach(m=>{const o={};for(const [d,a] of Object.entries(S.f[m]))o[d]=Array.from(a).flatMap((v,i)=>v?[i]:[]);if(Object.keys(o).length)f[m]=o});
   const q=ks.length&&S.q[ks[0]]?S.q[ks[0]]:'';
-  return {k,from:S.from,to:S.to,preset:S.preset,f,q,geoOn:S.geoOn,geoMode:S.geoMode,geoOpen:S.geoOpen,gLayers:S.gLayers,mapMode:S.mapMode[k],mapColor:S.mapColor[k],vr:S.vr&&S.vr[k],gOpen:S.gOpen};
+  return {k,from:S.from,to:S.to,preset:S.preset,f,q,geoOn:S.geoOn,geoMode:S.geoMode,geoOpen:S.geoOpen,gLayers:S.gLayers,mapMode:S.mapMode[k],mapColor:S.mapColor[k],vr:S.vr&&S.vr[k]};
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-fullmap]');if(!b)return;
   window.open(location.pathname+'?mapa='+encodeURIComponent(JSON.stringify(mapState(b.dataset.fullmap))),'_blank','noopener')});
@@ -2316,7 +2321,6 @@ if(FULL&&MODS[FULL.k]){
   for(const [m,o] of Object.entries(FULL.f||{}))if(DS[m])for(const [d,codes] of Object.entries(o))if(DS[m].dims[d])setCodes(m,d,codes);
   if(FULL.q)setSearch(k==='geo'?GEO_L.map(g=>g[0]):[k],FULL.q);
   if(FULL.geoOn)S.geoOn=FULL.geoOn;if(FULL.geoMode)S.geoMode=FULL.geoMode;if(FULL.geoOpen)S.geoOpen=FULL.geoOpen;if(FULL.gLayers)S.gLayers=FULL.gLayers;
-  if(FULL.gOpen)S.gOpen=FULL.gOpen;
   if(FULL.vr&&Array.isArray(FULL.vr.sel))(S.vr||(S.vr={}))[k]=FULL.vr;
   if(FULL.mapMode)S.mapMode[k]=FULL.mapMode;if(FULL.mapColor)S.mapColor[k]=FULL.mapColor;
   const w=document.querySelector('.topbar .where');if(w)w.textContent=MODS[k].title+' · '+dLong(S.from)+' – '+dLong(S.to);
