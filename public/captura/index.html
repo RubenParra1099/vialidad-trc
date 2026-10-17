@@ -44,6 +44,8 @@
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{min-height:100%}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;overflow-x:clip}
+body{overflow-x:clip;max-width:100vw}
 body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 var(--font);-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
@@ -121,6 +123,9 @@ textarea.in{height:auto;min-height:130px;padding:11px 12px;resize:vertical;line-
 .f.bad .in,.f.bad .tags{border-color:var(--rose)}
 .f.bad .chips .chip{border-color:color-mix(in oklab,var(--rose) 55%,var(--line2))}
 input[type=number].in{font-variant-numeric:tabular-nums}
+input[type=date].in,input[type=time].in{-webkit-appearance:none;appearance:none;min-width:0;max-width:100%;display:block;line-height:40px}
+input[type=date].in::-webkit-date-and-time-value,input[type=time].in::-webkit-date-and-time-value{text-align:left;margin:0}
+.f,.g>*{min-width:0}
 .cnt{font-size:11.5px;color:var(--faint);text-align:right;margin-top:4px}
 
 .chips{display:flex;flex-wrap:wrap;gap:7px}
@@ -190,6 +195,7 @@ input[type=number].in{font-variant-numeric:tabular-nums}
 .foot{position:fixed;left:0;right:0;bottom:0;z-index:40;background:color-mix(in oklab,var(--side) 94%,transparent);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:12px max(16px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 .foot .in-f{max-width:1380px;margin:0 auto;display:flex;align-items:center;gap:10px}
 .prog{flex:1;display:flex;align-items:center;gap:12px;min-width:0;color:var(--muted);font-size:12.5px}
+#progTx{white-space:nowrap}
 .bar{flex:1;max-width:320px;height:6px;border-radius:9px;background:var(--line);overflow:hidden}
 .bar i{display:block;height:100%;background:var(--accent);border-radius:9px;transition:width .25s}
 .kb{font-size:11.5px;color:var(--faint)}
@@ -314,6 +320,16 @@ tbody tr:hover td{background:var(--panel2)}
   .kb,.brand small{display:none}
 }
 @media (max-width:640px){
+  /* 16 px evita que el teléfono haga zoom al tocar un campo */
+  .in,.tags input,textarea.in,select{font-size:16px}
+  .in{height:46px}
+  .chip{padding:9px 14px;font-size:13px}
+  .chips.sm .chip{padding:7px 12px;font-size:12.5px}
+  .rsec dl{grid-template-columns:minmax(0,1fr)}.rsec dt{margin-top:4px}
+  .maptools .in{max-width:none;flex:1 1 100%}
+  .coord{margin-left:0}
+  .wrap{padding-bottom:100px}
+  .top .linkbtn{display:none}
   .g{gap:14px}
   .s2,.s3,.s4,.s5,.s6,.s7,.s8,.s9{grid-column:span 12}
   .tipos{grid-template-columns:minmax(0,1fr)}
@@ -323,6 +339,7 @@ tbody tr:hover td{background:var(--panel2)}
   .foot .btn{padding:0 12px}
   .foot .hide-m{display:none}
   .lmap{height:300px}
+  body.kb .foot{display:none}
 }
 </style>
 </head>
@@ -1071,6 +1088,11 @@ $('#themeBtn').onclick=()=>{document.documentElement.dataset.theme=oscuro()?'lig
 {const t=store.get('captura.tema');if(t)document.documentElement.dataset.theme=t}
 
 /* ---------- Inicio */
+/* ---------- Celular: detectar el teclado en pantalla */
+if(window.visualViewport){const vv=window.visualViewport;const kb=()=>document.body.classList.toggle('kb',window.innerHeight-vv.height>150);vv.addEventListener('resize',kb);vv.addEventListener('scroll',kb)}
+document.addEventListener('focusin',e=>{if(matchMedia('(max-width:640px)').matches&&e.target.matches('input:not([type=checkbox]),textarea'))document.body.classList.add('kb')});
+document.addEventListener('focusout',()=>setTimeout(()=>{const a=document.activeElement;if(!a||!a.matches('input:not([type=checkbox]),textarea'))if(!window.visualViewport||window.innerHeight-window.visualViewport.height<=150)document.body.classList.remove('kb')},150));
+
 (async()=>{
   pintarTema();
   try{CAT=await (await fetch('catalogos.json')).json()}catch(e){aviso('No se pudieron cargar los catálogos',1)}
