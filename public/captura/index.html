@@ -418,7 +418,9 @@ const TIPOS={
   corralon:{l:'Vehículo al corralón',d:'Infracción, inventario, grúa y datos del vehículo retirado.',ic:'tow',c:'var(--c7)'},
   detenido:{l:'Detenido',d:'Remisión por alcoholímetro: conductor, grado etílico, vehículo y autoridad.',ic:'cuff',c:'var(--c3)'},
 };
-const T=Object.keys(TIPOS);
+// tipos que no se capturan por ahora (siguen definidos para abrir registros que ya existan)
+const OCULTOS=['bitacora'];
+const T=Object.keys(TIPOS).filter(k=>!OCULTOS.includes(k));
 const F=(k,l,t,o={})=>({k,l,t,span:12,...o});
 const noBit=T.filter(t=>t!=='bitacora');
 
@@ -653,7 +655,7 @@ function renderSum(){
     <div class="ring"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="22" fill="none" stroke="var(--line)" stroke-width="5"/><circle cx="26" cy="26" r="22" fill="none" stroke="var(--accent)" stroke-width="5" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-a)}"/></svg><div class="t"><b class="num">${Math.round(a*100)} %</b><small>Obligatorios y recomendados</small></div></div>
     <div class="facts">${hechos().map(([l,v])=>`<div><span>${esc(l)}</span><b>${esc(v)}</b></div>`).join('')||'<p class="empty">Aún no hay datos.</p>'}</div>${atajos()}`;
 }
-const atajos=()=>`<div class="shortcuts"><kbd class="k">Ctrl+Enter</kbd><span>Siguiente / guardar</span><kbd class="k">Alt+←</kbd><span>Etapa anterior</span><kbd class="k">1–6</kbd><span>Tipo (en la primera etapa)</span></div>`;
+const atajos=()=>`<div class="shortcuts"><kbd class="k">Ctrl+Enter</kbd><span>Siguiente / guardar</span><kbd class="k">Alt+←</kbd><span>Etapa anterior</span><kbd class="k">1–${T.length}</kbd><span>Tipo (en la primera etapa)</span></div>`;
 
 /* ---------- Involucrados */
 function nuevoP(){return {rol:'CONDUCTOR',condicion:'ILESO'}}
@@ -997,7 +999,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();siguiente();return}
   if(e.altKey&&e.key==='ArrowLeft'){e.preventDefault();irA(pasos().indexOf(paso())-1);return}
   if(e.altKey&&e.key==='ArrowRight'){e.preventDefault();siguiente();return}
-  if(paso().special==='tipo'&&/^[1-6]$/.test(e.key)&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName))elegirTipo(T[+e.key-1]);
+  if(paso().special==="tipo"&&/^[1-9]$/.test(e.key)&&+e.key<=T.length&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName))elegirTipo(T[+e.key-1]);
 });
 
 /* ---------- Avisos */
