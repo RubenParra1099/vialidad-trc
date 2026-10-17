@@ -6,7 +6,7 @@
 import pg from 'pg';
 import { TABLA_USUARIOS } from '../lib/incidencias.js';
 import { firmar, sesionDe, cookieSesion, cookieSalir } from '../lib/sesion.js';
-import { cifrar, comprobar, validarNueva } from '../lib/contrasenas.js';
+import { cifrar, comprobar, validarNueva, variantes } from '../lib/contrasenas.js';
 
 let pool;
 const db = () => (pool ??= new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 3 }));
@@ -15,7 +15,8 @@ const json = (data, status = 200, cookie) => {
   if (cookie) headers['Set-Cookie'] = cookie;
   return Response.json(data, { status, headers });
 };
-const MAX_INTENTOS = 5, BLOQUEO_MIN = 15;
+const MAX_INTENTOS = 10, BLOQUEO_MIN = 5;
+const coincide = async (p, u) => { for (const v of variantes(p, u.debe_cambiar)) if (await comprobar(v, u.contrasena)) return true; return false; };
 const perfil = (u) => ({ usuario: u.usuario, nombre: u.nombre, rol: u.rol, cambiar: u.debe_cambiar });
 const token = (u) => firmar({ id: String(u.id), u: u.usuario, n: u.nombre, r: u.rol, c: u.debe_cambiar });
 
@@ -34,17 +35,17 @@ export async function POST(request) {
       const usuario = String(b.usuario || '').trim().toLowerCase();
       const { rows } = await db().query(`SELECT * FROM ${TABLA_USUARIOS} WHERE usuario = $1`, [usuario]);
       const u = rows[0];
-      const fallo = () => new Promise((r) => setTimeout(() => r(json({ error: 'Usuario o contraseña incorrectos' }, 401)), 600));
+      const fallo = (quedan) => new Promise((r) => setTimeout(() => r(json({ error: 'Usuario o contraseña incorrectos.' + (quedan != null && quedan <= 5 ? (quedan ? ` Te quedan ${quedan} intento${quedan === 1 ? '' : 's'} antes de un bloqueo de ${BLOQUEO_MIN} minutos.` : ` Usuario bloqueado ${BLOQUEO_MIN} minutos.`) : '') + ' La contraseña distingue mayúsculas y minúsculas.' }, 401)), 500));
       if (!u) return fallo();
       if (u.bloqueado_hasta && new Date(u.bloqueado_hasta) > new Date()) {
         const min = Math.ceil((new Date(u.bloqueado_hasta) - new Date()) / 60000);
         return json({ error: `Usuario bloqueado por intentos fallidos. Intenta en ${min} min o pide al administrador que lo desbloquee.` }, 423);
       }
-      if (!(await comprobar(b.contrasena, u.contrasena))) {
+      if (!(await coincide(b.contrasena, u))) {
         const n = u.intentos_fallidos + 1;
         await db().query(`UPDATE ${TABLA_USUARIOS} SET intentos_fallidos = $2, bloqueado_hasta = $3 WHERE id = $1`,
           [u.id, n >= MAX_INTENTOS ? 0 : n, n >= MAX_INTENTOS ? new Date(Date.now() + BLOQUEO_MIN * 60000) : null]);
-        return fallo();
+        return fallo(Math.max(0, MAX_INTENTOS - n));
       }
       if (!u.activo) return json({ error: 'Tu usuario está desactivado. Pide al administrador que lo active.' }, 403);
       await db().query(`UPDATE ${TABLA_USUARIOS} SET intentos_fallidos = 0, bloqueado_hasta = NULL, ultimo_acceso = now() WHERE id = $1`, [u.id]);
@@ -56,10 +57,10 @@ export async function POST(request) {
       if (!s) return json({ error: 'Sesión vencida: vuelve a iniciar sesión' }, 401);
       const { rows } = await db().query(`SELECT * FROM ${TABLA_USUARIOS} WHERE id = $1 AND activo`, [s.id]);
       const u = rows[0];
-      if (!u || !(await comprobar(b.actual, u.contrasena))) return json({ error: 'La contraseña actual no es correcta' }, 400);
+      if (!u || !(await coincide(b.actual, u))) return json({ error: 'La contraseña actual no es correcta' }, 400);
       const err = validarNueva(b.nueva);
       if (err) return json({ error: err }, 400);
-      if (b.nueva === b.actual) return json({ error: 'La nueva contraseña debe ser distinta de la actual' }, 400);
+      if (variantes(b.actual, true).includes(b.nueva)) return json({ error: 'La nueva contraseña debe ser distinta de la actual' }, 400);
       const r = await db().query(`UPDATE ${TABLA_USUARIOS} SET contrasena = $2, debe_cambiar = false, actualizado_en = now() WHERE id = $1 RETURNING *`, [u.id, await cifrar(b.nueva)]);
       return json(perfil(r.rows[0]), 200, cookieSesion(await token(r.rows[0])));
     }

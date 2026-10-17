@@ -118,7 +118,7 @@ La captura (`/captura/`) pide **usuario y contraseña propios** de cada capturis
 - **Dar de alta, activar, desactivar o restablecer contraseñas:** entra a `/captura/` con un usuario administrador → pestaña **Usuarios**. Al dar de alta se muestra una contraseña temporal; la persona la cambia en su primer acceso.
 - Roles: **capturista** (captura y consulta; solo edita lo que capturó) y **admin** (además administra usuarios y edita cualquier registro).
 - Cada incidencia guarda quién la capturó (`capturista`, `creado_por`) y quién la modificó (`actualizado_por`).
-- Tras 5 contraseñas incorrectas el usuario se bloquea 15 minutos (o hasta que un admin le restablezca la contraseña).
+- Tras 10 contraseñas incorrectas el usuario se bloquea 5 minutos (o hasta que un admin le restablezca la contraseña). Las contraseñas temporales son minúsculas y números en grupos (`k7mq-4tzp-9wnr`).
 - Desde la terminal (primer administrador o emergencias):
   ```bash
   npm run usuarios -- listar

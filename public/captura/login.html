@@ -66,7 +66,8 @@ svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke
     <label for="usuario">Usuario</label>
     <input class="in" id="usuario" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
     <label for="contrasena">Contraseña</label>
-    <div class="pw"><input class="in" id="contrasena" name="password" type="password" autocomplete="current-password" required><button type="button" data-ver="contrasena" aria-label="Mostrar contraseña"></button></div>
+    <div class="pw"><input class="in" id="contrasena" name="password" type="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" required><button type="button" data-ver="contrasena" aria-label="Mostrar contraseña"></button></div>
+    <div class="help">Distingue mayúsculas y minúsculas. Usa el ojo para ver lo que escribiste.</div>
     <div class="err" id="eEntrar" role="alert" hidden></div>
     <button class="btn" id="bEntrar">Entrar</button>
   </form>
