@@ -69,7 +69,7 @@ export async function GET(request) {
     }
     const limit = Math.min(Math.max(parseInt(u.searchParams.get('limit'), 10) || 200, 1), 1000);
     const { rows } = await db().query(`SELECT i.id, i.folio, i.tipo, i.estado, to_char(i.fecha, 'YYYY-MM-DD') AS fecha, to_char(i.hora, 'HH24:MI') AS hora,
-        i.ubicacion, i.colonia, i.sector, i.agentes, i.unidades, i.capturista, i.creado_por, i.creado_en, i.actualizado_en,
+        i.ubicacion, i.colonia, i.sector, i.sector_mapa, i.seccion, i.agentes, i.unidades, i.capturista, i.creado_por, i.creado_en, i.actualizado_en,
         coalesce(i.lesionado_masculino,0)+coalesce(i.lesionado_femenino,0) AS lesionados, coalesce(i.fallecido_masculino,0)+coalesce(i.fallecido_femenino,0) AS fallecidos,
         (SELECT count(*)::int FROM ${TABLA_PART} p WHERE p.incidencia_id = i.id) AS n_participantes
       FROM ${TABLA} i ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY i.creado_en DESC LIMIT ${limit}`, params);

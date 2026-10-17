@@ -60,7 +60,7 @@ try {
   await db.query(`COMMENT ON COLUMN ${TABLA}.actualizado_por IS 'Último usuario que modificó el registro (sesión)'`);
   await db.query(`DROP VIEW IF EXISTS ${SCHEMA}.v_incidencias`);
   await db.query(`CREATE VIEW ${SCHEMA}.v_incidencias AS
-    SELECT i.folio, i.tipo, i.estado, i.fecha, i.hora, i.ubicacion, i.colonia, i.sector,
+    SELECT i.folio, i.tipo, i.estado, i.fecha, i.hora, i.ubicacion, i.colonia, i.sector, i.seccion, i.sector_mapa,
       coalesce(i.lesionado_masculino, 0) + coalesce(i.lesionado_femenino, 0) AS total_lesionados,
       coalesce(i.fallecido_masculino, 0) + coalesce(i.fallecido_femenino, 0) AS total_fallecidos,
       (SELECT count(*) FROM ${TABLA_PART} p WHERE p.incidencia_id = i.id) AS n_involucrados,

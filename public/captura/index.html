@@ -753,7 +753,7 @@ function htmlRevision(){
     let body;
     if(st.special==='part')body=S.p.length?`<dl>${S.p.map((p,i)=>`<dt>#${i+1}</dt><dd>${esc(resumenP(p))}</dd>`).join('')}<dt>Lesionados</dt><dd>${(+S.c.lesionado_masculino||0)} H · ${(+S.c.lesionado_femenino||0)} M</dd><dt>Fallecidos</dt><dd>${(+S.c.fallecido_masculino||0)} H · ${(+S.c.fallecido_femenino||0)} M</dd><dt>Vehículos</dt><dd>${+S.c.cantidad_vehiculos||0}</dd></dl>`:'<span class="none">Sin involucrados</span>';
     else{const rows=camposDe(st).map(f=>{const v=valorDe(f);if(vacio(v))return esReq(f)?`<dt>${esc(pick(f.l,S.tipo))}</dt><dd class="miss">Falta</dd>`:'';
-      const t=f.t==='map'?`${(+v[0]).toFixed(5)}, ${(+v[1]).toFixed(5)}${S.c.seccion?` · sección ${S.c.seccion}`:''}`:f.k==='fecha'?fechaLarga(v):Array.isArray(v)?v.join(', '):v;return `<dt>${esc(pick(f.l,S.tipo))}</dt><dd>${esc(t)}</dd>`}).join('');
+      const t=f.t==='map'?`${(+v[0]).toFixed(5)}, ${(+v[1]).toFixed(5)}${S.c.seccion?` · sección ${S.c.seccion}`:''}${S.c.sector_mapa?` · sector (mapa) ${S.c.sector_mapa}`:''}`:f.k==='fecha'?fechaLarga(v):Array.isArray(v)?v.join(', '):v;return `<dt>${esc(pick(f.l,S.tipo))}</dt><dd>${esc(t)}</dd>`}).join('');
       body=rows?`<dl>${rows}</dl>`:'<span class="none">Sin datos</span>'}
     return `<div class="rsec${st.special==='part'?' full':''}"><div class="rh">${ic(st.ic,15)}<b>${esc(pick(st.t,S.tipo))}</b><button type="button" class="btn sm ghost" data-go="${idx}">${ic('edit',14)}Editar</button></div>${body}</div>`}).join('');
   const est=['capturado','validado','borrador','cancelado'];
@@ -840,7 +840,7 @@ function vecinos(lat,lng){
   return {cols:Object.entries(v).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([n,w])=>({n,p:w/tot})),sector:Object.entries(sv).sort((a,b)=>b[1]-a[1])[0]?.[0]||null};
 }
 /* Polígonos del INE (public/captura/geo-ine.json, npm run captura:ine): colonia exacta y sección electoral del punto */
-let INE=null,poliColonia=null;
+let INE=null,poliColonia=null,SECT=null; // SECT: mapa de sectores 7, 8A … 11B (public/captura/sectores-mapa.json)
 function indiceIne(lista){return lista.map(x=>{const f=x.p.flat();return {n:x.n,p:x.p,b:[Math.min(...f.map(q=>q[0])),Math.min(...f.map(q=>q[1])),Math.max(...f.map(q=>q[0])),Math.max(...f.map(q=>q[1]))]}})}
 function dentroAnillo([x,y],r){let c=false;for(let i=0,j=r.length-1;i<r.length;j=i++){const [xi,yi]=r[i],[xj,yj]=r[j];if((yi>y)!==(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)c=!c}return c}
 function enPoligono(lista,lat,lng){for(const x of lista||[]){if(lng<x.b[0]||lng>x.b[2]||lat<x.b[1]||lat>x.b[3])continue;if(x.p.some(r=>dentroAnillo([lng,lat],r)))return x}return null}
@@ -862,6 +862,7 @@ function geocodificar(){
     const pIne=INE&&enPoligono(INE.colonias,lat,lng),sIne=INE&&enPoligono(INE.secciones,lat,lng);
     const colIne=pIne?(CAT.colonia_ine?.[pIne.n]||coloniaCatalogo(pIne.n)||pIne.n):null;
     S.c.seccion=sIne?sIne.n:null;pintarPoligono(pIne&&pIne.n);
+    const sMapa=SECT&&enPoligono(SECT,lat,lng);S.c.sector_mapa=sMapa?sMapa.n:null;
     let col=null,fuente='';
     if(colIne){col=colIne;fuente='INE · polígono oficial'}
     else if(osmCat){col=osmCat;fuente='OpenStreetMap'}
@@ -870,7 +871,7 @@ function geocodificar(){
     if(osm&&!osmCat&&!colIne)opciones.push({n:osm.replace(/\s+(DE )?TORREÓN$|\s+(DE )?TORREON$/,''),l:'nueva · OpenStreetMap',nueva:1});
     if(!col&&vc.cols[0])opciones.sort((a,b)=>(a.nueva?1:0)-(b.nueva?1:0));
     S.sectorPunto=vc.sector;
-    GEO={ubicacion:g?(g.ubicacion||'').toUpperCase():'',entre_calles:g?(g.entreCalles||'').toUpperCase():'',colonia:col,fuente,opciones,error:!g,seccion:S.c.seccion};
+    GEO={ubicacion:g?(g.ubicacion||'').toUpperCase():'',entre_calles:g?(g.entreCalles||'').toUpperCase():'',colonia:col,fuente,opciones,error:!g,seccion:S.c.seccion,sector_mapa:S.c.sector_mapa};
     // lo que llenó el mapa se reemplaza (o se limpia si el punto nuevo no trae dato); lo vacío se llena
     for(const k of GEOK){if(GEO[k]&&(vacio(S.c[k])||S.auto[k]))aplicarGeo(k,GEO[k]);else if(!GEO[k]&&S.auto[k]&&!vacio(S.c[k]))aplicarGeo(k,'')}
     pintarGeo();
@@ -888,7 +889,7 @@ function pintarGeo(){
   const sinDir=!GEO.ubicacion&&!GEO.entre_calles;
   box.innerHTML=`<div class="suggest geo">${ic(sinDir?'alert':'pin',15)}<div class="gtx"><small>Detectado en el mapa</small>
     ${sinDir?'<div><span>No se pudo obtener la dirección de este punto; escríbela a mano.</span></div>':''}
-    ${fila('Ubicación:',GEO.ubicacion)}${fila('Entre calles:',GEO.entre_calles)}${fila('Colonia:',GEO.colonia,GEO.fuente)}${fila('Sección electoral:',GEO.seccion)}
+    ${fila('Ubicación:',GEO.ubicacion)}${fila('Entre calles:',GEO.entre_calles)}${fila('Colonia:',GEO.colonia,GEO.fuente)}${fila('Sección electoral:',GEO.seccion)}${fila('Sector (mapa):',GEO.sector_mapa)}
     ${!GEO.colonia?'<div><span>Colonia: no se pudo determinar con certeza; elige una opción o escríbela.</span></div>':''}
     ${ops.length?`<div class="gops"><span>${GEO.colonia?'¿Otra colonia?':'Opciones:'}</span>${ops.map(o=>`<button type="button" class="chip" data-act="usecol" data-v="${esc(o.n)}">${esc(o.n)} <em>${esc(o.l)}</em></button>`).join('')}</div>`:''}
     </div><span class="sp"></span>${pend?'<button type="button" class="btn sm" data-act="usegeo">Usar estos datos</button>':(GEO.ubicacion||GEO.colonia)?`<span class="gok">${ic('check',14)} Aplicado</span>`:''}</div>`;
@@ -963,7 +964,7 @@ function payload(){
   const o={tipo:S.tipo,estado:S.estado};
   const activos=new Set(pasos().flatMap(st=>camposDe(st)).map(f=>f.k));
   for(const k of TODOS){const v=S.c[k];o[k]=activos.has(k)&&!vacio(v)?(Array.isArray(v)?v.join(', '):String(v).trim()):null}
-  const geo=activos.has('geo');o.latitud=geo?S.c.latitud??null:null;o.longitud=geo?S.c.longitud??null:null;o.seccion=geo&&S.c.latitud!=null?S.c.seccion??null:null;
+  const geo=activos.has('geo');o.latitud=geo?S.c.latitud??null:null;o.longitud=geo?S.c.longitud??null:null;o.seccion=geo&&S.c.latitud!=null?S.c.seccion??null:null;o.sector_mapa=geo&&S.c.latitud!=null?S.c.sector_mapa??null:null;
   for(const [k] of CONTEOS)o[k]=S.tipo==='accidente'?(+S.c[k]||0):null;
   o.participantes=S.tipo==='accidente'?S.p.map(p=>{const q={...p};if(!conVehiculo(p))['servicio','tipo_servicio','clasificacion','marca','linea','placas','color'].forEach(k=>q[k]=null);if(p.servicio!=='PUBLICO')q.tipo_servicio=null;return q}):[];
   return o;
@@ -1062,7 +1063,7 @@ stage.addEventListener('click',e=>{
   if(act==='togglep'){if(e.target.closest('.btn'))return;S.abiertos[i]=S.abiertos[i]===false;$(`[data-pc="${i}"]`).classList.toggle('closed',S.abiertos[i]===false);return}
   if(act==='locate'){if(!navigator.geolocation)return aviso('El navegador no permite obtener la ubicación',1);t.disabled=true;navigator.geolocation.getCurrentPosition(p=>{t.disabled=false;ponerPin(p.coords.latitude,p.coords.longitude,true);map&&map.setView([p.coords.latitude,p.coords.longitude],17)},er=>{t.disabled=false;aviso('No se pudo obtener la ubicación: '+er.message,1)},{enableHighAccuracy:true,timeout:10000});return}
   if(act==='colmap'){const c=cc();if(c&&map)map.setView(c,16);return}
-  if(act==='clearpin'){S.c.latitud=null;S.c.longitud=null;S.c.seccion=null;pintarPoligono(null);if(marker){marker.remove();marker=null}$('#coord').textContent='Sin punto';GEO=null;geoSeq++;$('#sugCol').innerHTML='';t.disabled=true;$('#maphint').textContent='Haz clic en el mapa para marcar el punto';cambio();return}
+  if(act==='clearpin'){S.c.latitud=null;S.c.longitud=null;S.c.seccion=null;S.c.sector_mapa=null;pintarPoligono(null);if(marker){marker.remove();marker=null}$('#coord').textContent='Sin punto';GEO=null;geoSeq++;$('#sugCol').innerHTML='';t.disabled=true;$('#maphint').textContent='Haz clic en el mapa para marcar el punto';cambio();return}
   if(act==='usegeo'){if(GEO){S.auto=S.auto||{};GEOK.forEach(k=>{if(GEO[k])aplicarGeo(k,GEO[k])})}pintarGeo();return}
   if(act==='usecol'){S.auto=S.auto||{};aplicarGeo('colonia',t.dataset.v);S.auto.colonia=false;pintarGeo();return}
 });
@@ -1118,7 +1119,7 @@ async function cargarRegs(){
   $('#rtipos').innerHTML=[['','Todos',REGS.length],...T.map(k=>[k,TIPOS[k].l,cuenta[k]||0])].map(([k,l,n])=>`<button class="chip" data-rt="${k}" aria-pressed="${rTipo===k}">${esc(l)} <span class="num">${n}</span></button>`).join('');
   const rows=REGS.filter(x=>!rTipo||x.tipo===rTipo);
   if(!rows.length){box.innerHTML=`<div class="nodata">${REGS.length?'No hay registros de este tipo.':'Aún no hay incidencias capturadas.'}</div>`;return}
-  box.innerHTML=`<table><thead><tr><th>Folio</th><th>Tipo</th><th>Fecha</th><th>Ubicación</th><th>Colonia / sector</th><th>Unidades / agentes</th><th>Involucrados</th><th>Estado</th><th>Capturado</th></tr></thead><tbody>${rows.map(x=>{const t=TIPOS[x.tipo];return `<tr data-id="${x.id}" tabindex="0"><td class="num"><b>${esc(x.folio)}</b></td><td><span class="tb" style="--tone:${t.c}"><i></i>${esc(t.l)}</span></td><td class="num" style="white-space:nowrap">${esc(x.fecha||'')} ${esc(x.hora||'')}</td><td>${esc(x.ubicacion||'')}</td><td>${esc([x.colonia,x.sector].filter(Boolean).join(' · '))}</td><td>${esc([x.unidades,x.agentes].filter(Boolean).join(' · '))}</td><td class="num">${x.tipo==='accidente'?`${x.n_participantes} · ${x.lesionados} les. · ${x.fallecidos} fall.`:''}</td><td><span class="est ${esc(x.estado)}">${esc(x.estado)}</span></td><td class="num" style="white-space:nowrap">${new Date(x.creado_en).toLocaleString('es-MX',{dateStyle:'short',timeStyle:'short'})}${x.capturista?`<br><small>${esc(x.capturista)}</small>`:''}</td></tr>`}).join('')}</tbody></table>`;
+  box.innerHTML=`<table><thead><tr><th>Folio</th><th>Tipo</th><th>Fecha</th><th>Ubicación</th><th>Colonia / sector</th><th>Unidades / agentes</th><th>Involucrados</th><th>Estado</th><th>Capturado</th></tr></thead><tbody>${rows.map(x=>{const t=TIPOS[x.tipo];return `<tr data-id="${x.id}" tabindex="0"><td class="num"><b>${esc(x.folio)}</b></td><td><span class="tb" style="--tone:${t.c}"><i></i>${esc(t.l)}</span></td><td class="num" style="white-space:nowrap">${esc(x.fecha||'')} ${esc(x.hora||'')}</td><td>${esc(x.ubicacion||'')}</td><td>${esc([x.colonia,x.sector].filter(Boolean).join(' · '))}${x.sector_mapa?`<br><small>Sector (mapa) ${esc(x.sector_mapa)}${x.seccion?` · secc. ${esc(x.seccion)}`:''}</small>`:x.seccion?`<br><small>Secc. ${esc(x.seccion)}</small>`:''}</td><td>${esc([x.unidades,x.agentes].filter(Boolean).join(' · '))}</td><td class="num">${x.tipo==='accidente'?`${x.n_participantes} · ${x.lesionados} les. · ${x.fallecidos} fall.`:''}</td><td><span class="est ${esc(x.estado)}">${esc(x.estado)}</span></td><td class="num" style="white-space:nowrap">${new Date(x.creado_en).toLocaleString('es-MX',{dateStyle:'short',timeStyle:'short'})}${x.capturista?`<br><small>${esc(x.capturista)}</small>`:''}</td></tr>`}).join('')}</tbody></table>`;
 }
 $('#rtipos').addEventListener('click',e=>{const b=e.target.closest('[data-rt]');if(!b)return;rTipo=b.dataset.rt;cargarRegs()});
 $('#rtable').addEventListener('click',e=>{const tr=e.target.closest('tr[data-id]');if(tr)abrir(+tr.dataset.id)});
@@ -1128,7 +1129,7 @@ async function abrir(id){
     const r=await fetch(`${API}?id=${id}`);const x=await r.json();if(!r.ok)throw new Error(x.error);
     const n=nuevoEstado();n.id=x.id;n.folio=x.folio;n.tipo=x.tipo;n.estado=x.estado;
     for(const k of TODOS){const f=STEPS.flatMap(s=>s.fields||[]).find(y=>y.k===k);let v=x[k];if(v==null)continue;if(f&&f.t==='tags')v=String(v).split(/\s*,\s*/).filter(Boolean);n.c[k]=v}
-    n.c.latitud=x.latitud;n.c.longitud=x.longitud;n.c.seccion=x.seccion;
+    n.c.latitud=x.latitud;n.c.longitud=x.longitud;n.c.seccion=x.seccion;n.c.sector_mapa=x.sector_mapa;
     for(const [k] of CONTEOS)n.c[k]=x[k];
     n.p=(x.participantes||[]).map(p=>{const q={};PF.forEach(f=>{if(p[f.k]!=null)q[f.k]=String(p[f.k])});return q});
     n.manual=true;n.p.forEach((_,j)=>n.abiertos[j]=false);
@@ -1139,7 +1140,7 @@ async function abrir(id){
 }
 $('#csvBtn').onclick=()=>{
   if(!REGS.length)return aviso('No hay registros para exportar',1);
-  const cols=['folio','tipo','estado','fecha','hora','ubicacion','colonia','sector','unidades','agentes','lesionados','fallecidos','n_participantes','capturista','creado_en'];
+  const cols=['folio','tipo','estado','fecha','hora','ubicacion','colonia','sector','sector_mapa','seccion','unidades','agentes','lesionados','fallecidos','n_participantes','capturista','creado_en'];
   const csv=[cols.join(','),...REGS.filter(x=>!rTipo||x.tipo===rTipo).map(x=>cols.map(c=>`"${String(x[c]??'').replace(/"/g,'""')}"`).join(','))].join('\r\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['﻿'+csv],{type:'text/csv'}));a.download=`incidencias_${hoy()}.csv`;a.click();URL.revokeObjectURL(a.href);
 };
@@ -1235,6 +1236,7 @@ document.addEventListener('focusout',()=>setTimeout(()=>{const a=document.active
   pintarYo();
   try{CAT=await (await fetch('catalogos.json')).json()}catch(e){aviso('No se pudieron cargar los catálogos',1)}
   CAT.colonia_info=CAT.colonia_info||{};CAT.colonia=CAT.colonia||[];
+  fetch('sectores-mapa.json').then(r=>r.ok?r.json():null).then(j=>{if(j)SECT=indiceIne(j.sectores||[])}).catch(()=>{});
   fetch('geo-ine.json').then(r=>r.ok?r.json():null).then(j=>{if(j)INE={colonias:indiceIne(j.colonias||[]),secciones:indiceIne(j.secciones||[])}}).catch(()=>{});
   try{const r=await fetch('/api/colonias');if(r.ok){const j=await r.json();for(const c of j.colonias||[])if(!CAT.colonia_info[c.nombre]){CAT.colonia.push(c.nombre);CAT.colonia_info[c.nombre]=[c.sector,c.latitud,c.longitud]}indicePuntos(j.puntos||[])}}catch(e){}
   renderStage();ofrecerBorrador();contarRegs();
