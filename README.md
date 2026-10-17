@@ -127,3 +127,5 @@ La captura (`/captura/`) pide **usuario y contraseña propios** de cada capturis
   npm run usuarios -- desactivar jperez
   ```
 - Variables necesarias en Vercel: `DATABASE_URL`, `SESSION_SECRET` (llave para firmar la sesión, 32+ caracteres), `BASIC_AUTH_USER`, `BASIC_AUTH_PASSWORD`. En local, `SESSION_SECRET` va en `.env`.
+
+**Colonias y secciones del INE.** `npm run captura:ine` descarga del servicio WMS público del INE (`cartografia.ine.mx/wms`) los polígonos de **colonias** y **secciones electorales** de Torreón a `public/captura/geo-ine.json`; después `npm run captura:catalogos` liga cada colonia del INE a la del catálogo (las que no estaban entran como `fuente = 'ine'`). En el formulario, si el punto cae en un polígono del INE, la colonia se toma de ahí (exacta), se dibuja su contorno en el mapa y la sección se guarda en `vialidad.incidencias.seccion`; fuera de los polígonos se usa la detección por registros cercanos.

@@ -753,7 +753,7 @@ function htmlRevision(){
     let body;
     if(st.special==='part')body=S.p.length?`<dl>${S.p.map((p,i)=>`<dt>#${i+1}</dt><dd>${esc(resumenP(p))}</dd>`).join('')}<dt>Lesionados</dt><dd>${(+S.c.lesionado_masculino||0)} H · ${(+S.c.lesionado_femenino||0)} M</dd><dt>Fallecidos</dt><dd>${(+S.c.fallecido_masculino||0)} H · ${(+S.c.fallecido_femenino||0)} M</dd><dt>Vehículos</dt><dd>${+S.c.cantidad_vehiculos||0}</dd></dl>`:'<span class="none">Sin involucrados</span>';
     else{const rows=camposDe(st).map(f=>{const v=valorDe(f);if(vacio(v))return esReq(f)?`<dt>${esc(pick(f.l,S.tipo))}</dt><dd class="miss">Falta</dd>`:'';
-      const t=f.t==='map'?`${(+v[0]).toFixed(5)}, ${(+v[1]).toFixed(5)}`:f.k==='fecha'?fechaLarga(v):Array.isArray(v)?v.join(', '):v;return `<dt>${esc(pick(f.l,S.tipo))}</dt><dd>${esc(t)}</dd>`}).join('');
+      const t=f.t==='map'?`${(+v[0]).toFixed(5)}, ${(+v[1]).toFixed(5)}${S.c.seccion?` · sección ${S.c.seccion}`:''}`:f.k==='fecha'?fechaLarga(v):Array.isArray(v)?v.join(', '):v;return `<dt>${esc(pick(f.l,S.tipo))}</dt><dd>${esc(t)}</dd>`}).join('');
       body=rows?`<dl>${rows}</dl>`:'<span class="none">Sin datos</span>'}
     return `<div class="rsec${st.special==='part'?' full':''}"><div class="rh">${ic(st.ic,15)}<b>${esc(pick(st.t,S.tipo))}</b><button type="button" class="btn sm ghost" data-go="${idx}">${ic('edit',14)}Editar</button></div>${body}</div>`}).join('');
   const est=['capturado','validado','borrador','cancelado'];
@@ -773,7 +773,7 @@ function iniciarMapa(){
   const has=S.c.latitud!=null;
   map=L.map('lmap',{zoomControl:true,attributionControl:true}).setView(has?[S.c.latitud,S.c.longitud]:(cc()||TRC),has?17:cc()?15:13);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,referrerPolicy:'strict-origin-when-cross-origin',attribution:'© colaboradores de OpenStreetMap'}).addTo(map);
-  if(has)ponerPin(S.c.latitud,S.c.longitud,false);
+  if(has){ponerPin(S.c.latitud,S.c.longitud,false);const p=INE&&enPoligono(INE.colonias,S.c.latitud,S.c.longitud);poliColonia=null;pintarPoligono(p&&p.n)}
   map.on('click',e=>ponerPin(e.latlng.lat,e.latlng.lng,true));
 }
 function cc(){const i=CAT.colonia_info?.[S.c.colonia];return i&&i[1]?[i[1],i[2]]:null}
@@ -839,6 +839,17 @@ function vecinos(lat,lng){
   near.slice(0,12).forEach(([d,n])=>{const w=1/(d+30);v[n]=(v[n]||0)+w;tot+=w;const s=CAT.colonia_info[n]?.[0];if(s)sv[s]=(sv[s]||0)+w});
   return {cols:Object.entries(v).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([n,w])=>({n,p:w/tot})),sector:Object.entries(sv).sort((a,b)=>b[1]-a[1])[0]?.[0]||null};
 }
+/* Polígonos del INE (public/captura/geo-ine.json, npm run captura:ine): colonia exacta y sección electoral del punto */
+let INE=null,poliColonia=null;
+function indiceIne(lista){return lista.map(x=>{const f=x.p.flat();return {n:x.n,p:x.p,b:[Math.min(...f.map(q=>q[0])),Math.min(...f.map(q=>q[1])),Math.max(...f.map(q=>q[0])),Math.max(...f.map(q=>q[1]))]}})}
+function dentroAnillo([x,y],r){let c=false;for(let i=0,j=r.length-1;i<r.length;j=i++){const [xi,yi]=r[i],[xj,yj]=r[j];if((yi>y)!==(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)c=!c}return c}
+function enPoligono(lista,lat,lng){for(const x of lista||[]){if(lng<x.b[0]||lng>x.b[2]||lat<x.b[1]||lat>x.b[3])continue;if(x.p.some(r=>dentroAnillo([lng,lat],r)))return x}return null}
+function pintarPoligono(nombreIne){
+  if(poliColonia){poliColonia.remove();poliColonia=null}
+  if(!map||!nombreIne||!INE)return;
+  const piezas=INE.colonias.filter(x=>x.n===nombreIne).flatMap(x=>x.p).map(r=>r.map(([x,y])=>[y,x]));
+  if(piezas.length)poliColonia=L.polygon(piezas,{color:getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#2bbfc1',weight:2,dashArray:'5 4',fillOpacity:.08,interactive:false}).addTo(map);
+}
 function geocodificar(){
   clearTimeout(tGeo);const seq=++geoSeq,lat=S.c.latitud,lng=S.c.longitud;
   const box=$('#sugCol');if(box)box.innerHTML=`<div class="suggest">${ic('pin',15)}<span>Buscando dirección, entre calles y colonia…</span></div>`;
@@ -848,14 +859,18 @@ function geocodificar(){
     if(seq!==geoSeq)return;
     S.auto=S.auto||{};
     const vc=vecinos(lat,lng),osm=g&&g.colonia?String(g.colonia).toUpperCase():'',osmCat=coloniaCatalogo(osm);
+    const pIne=INE&&enPoligono(INE.colonias,lat,lng),sIne=INE&&enPoligono(INE.secciones,lat,lng);
+    const colIne=pIne?(CAT.colonia_ine?.[pIne.n]||coloniaCatalogo(pIne.n)||pIne.n):null;
+    S.c.seccion=sIne?sIne.n:null;pintarPoligono(pIne&&pIne.n);
     let col=null,fuente='';
-    if(osmCat){col=osmCat;fuente='OpenStreetMap'}
+    if(colIne){col=colIne;fuente='INE · polígono oficial'}
+    else if(osmCat){col=osmCat;fuente='OpenStreetMap'}
     else if(vc.cols[0]&&vc.cols[0].p>=CONF_COLONIA){col=vc.cols[0].n;fuente=`${Math.round(vc.cols[0].p*100)} % de los registros cercanos`}
-    const opciones=vc.cols.filter(c=>c.n!==col).map(c=>({n:c.n,l:`${Math.round(c.p*100)} %`}));
-    if(osm&&!osmCat)opciones.push({n:osm.replace(/\s+(DE )?TORREÓN$|\s+(DE )?TORREON$/,''),l:'nueva · OpenStreetMap',nueva:1});
+    const opciones=vc.cols.filter(c=>c.n!==col).slice(0,colIne?2:3).map(c=>({n:c.n,l:`${Math.round(c.p*100)} % cercanos`}));
+    if(osm&&!osmCat&&!colIne)opciones.push({n:osm.replace(/\s+(DE )?TORREÓN$|\s+(DE )?TORREON$/,''),l:'nueva · OpenStreetMap',nueva:1});
     if(!col&&vc.cols[0])opciones.sort((a,b)=>(a.nueva?1:0)-(b.nueva?1:0));
     S.sectorPunto=vc.sector;
-    GEO={ubicacion:g?(g.ubicacion||'').toUpperCase():'',entre_calles:g?(g.entreCalles||'').toUpperCase():'',colonia:col,fuente,opciones,error:!g};
+    GEO={ubicacion:g?(g.ubicacion||'').toUpperCase():'',entre_calles:g?(g.entreCalles||'').toUpperCase():'',colonia:col,fuente,opciones,error:!g,seccion:S.c.seccion};
     // lo que llenó el mapa se reemplaza (o se limpia si el punto nuevo no trae dato); lo vacío se llena
     for(const k of GEOK){if(GEO[k]&&(vacio(S.c[k])||S.auto[k]))aplicarGeo(k,GEO[k]);else if(!GEO[k]&&S.auto[k]&&!vacio(S.c[k]))aplicarGeo(k,'')}
     pintarGeo();
@@ -873,7 +888,7 @@ function pintarGeo(){
   const sinDir=!GEO.ubicacion&&!GEO.entre_calles;
   box.innerHTML=`<div class="suggest geo">${ic(sinDir?'alert':'pin',15)}<div class="gtx"><small>Detectado en el mapa</small>
     ${sinDir?'<div><span>No se pudo obtener la dirección de este punto; escríbela a mano.</span></div>':''}
-    ${fila('Ubicación:',GEO.ubicacion)}${fila('Entre calles:',GEO.entre_calles)}${fila('Colonia:',GEO.colonia,GEO.fuente)}
+    ${fila('Ubicación:',GEO.ubicacion)}${fila('Entre calles:',GEO.entre_calles)}${fila('Colonia:',GEO.colonia,GEO.fuente)}${fila('Sección electoral:',GEO.seccion)}
     ${!GEO.colonia?'<div><span>Colonia: no se pudo determinar con certeza; elige una opción o escríbela.</span></div>':''}
     ${ops.length?`<div class="gops"><span>${GEO.colonia?'¿Otra colonia?':'Opciones:'}</span>${ops.map(o=>`<button type="button" class="chip" data-act="usecol" data-v="${esc(o.n)}">${esc(o.n)} <em>${esc(o.l)}</em></button>`).join('')}</div>`:''}
     </div><span class="sp"></span>${pend?'<button type="button" class="btn sm" data-act="usegeo">Usar estos datos</button>':(GEO.ubicacion||GEO.colonia)?`<span class="gok">${ic('check',14)} Aplicado</span>`:''}</div>`;
@@ -948,7 +963,7 @@ function payload(){
   const o={tipo:S.tipo,estado:S.estado};
   const activos=new Set(pasos().flatMap(st=>camposDe(st)).map(f=>f.k));
   for(const k of TODOS){const v=S.c[k];o[k]=activos.has(k)&&!vacio(v)?(Array.isArray(v)?v.join(', '):String(v).trim()):null}
-  const geo=activos.has('geo');o.latitud=geo?S.c.latitud??null:null;o.longitud=geo?S.c.longitud??null:null;
+  const geo=activos.has('geo');o.latitud=geo?S.c.latitud??null:null;o.longitud=geo?S.c.longitud??null:null;o.seccion=geo&&S.c.latitud!=null?S.c.seccion??null:null;
   for(const [k] of CONTEOS)o[k]=S.tipo==='accidente'?(+S.c[k]||0):null;
   o.participantes=S.tipo==='accidente'?S.p.map(p=>{const q={...p};if(!conVehiculo(p))['servicio','tipo_servicio','clasificacion','marca','linea','placas','color'].forEach(k=>q[k]=null);if(p.servicio!=='PUBLICO')q.tipo_servicio=null;return q}):[];
   return o;
@@ -1047,7 +1062,7 @@ stage.addEventListener('click',e=>{
   if(act==='togglep'){if(e.target.closest('.btn'))return;S.abiertos[i]=S.abiertos[i]===false;$(`[data-pc="${i}"]`).classList.toggle('closed',S.abiertos[i]===false);return}
   if(act==='locate'){if(!navigator.geolocation)return aviso('El navegador no permite obtener la ubicación',1);t.disabled=true;navigator.geolocation.getCurrentPosition(p=>{t.disabled=false;ponerPin(p.coords.latitude,p.coords.longitude,true);map&&map.setView([p.coords.latitude,p.coords.longitude],17)},er=>{t.disabled=false;aviso('No se pudo obtener la ubicación: '+er.message,1)},{enableHighAccuracy:true,timeout:10000});return}
   if(act==='colmap'){const c=cc();if(c&&map)map.setView(c,16);return}
-  if(act==='clearpin'){S.c.latitud=null;S.c.longitud=null;if(marker){marker.remove();marker=null}$('#coord').textContent='Sin punto';GEO=null;geoSeq++;$('#sugCol').innerHTML='';t.disabled=true;$('#maphint').textContent='Haz clic en el mapa para marcar el punto';cambio();return}
+  if(act==='clearpin'){S.c.latitud=null;S.c.longitud=null;S.c.seccion=null;pintarPoligono(null);if(marker){marker.remove();marker=null}$('#coord').textContent='Sin punto';GEO=null;geoSeq++;$('#sugCol').innerHTML='';t.disabled=true;$('#maphint').textContent='Haz clic en el mapa para marcar el punto';cambio();return}
   if(act==='usegeo'){if(GEO){S.auto=S.auto||{};GEOK.forEach(k=>{if(GEO[k])aplicarGeo(k,GEO[k])})}pintarGeo();return}
   if(act==='usecol'){S.auto=S.auto||{};aplicarGeo('colonia',t.dataset.v);S.auto.colonia=false;pintarGeo();return}
 });
@@ -1113,7 +1128,7 @@ async function abrir(id){
     const r=await fetch(`${API}?id=${id}`);const x=await r.json();if(!r.ok)throw new Error(x.error);
     const n=nuevoEstado();n.id=x.id;n.folio=x.folio;n.tipo=x.tipo;n.estado=x.estado;
     for(const k of TODOS){const f=STEPS.flatMap(s=>s.fields||[]).find(y=>y.k===k);let v=x[k];if(v==null)continue;if(f&&f.t==='tags')v=String(v).split(/\s*,\s*/).filter(Boolean);n.c[k]=v}
-    n.c.latitud=x.latitud;n.c.longitud=x.longitud;
+    n.c.latitud=x.latitud;n.c.longitud=x.longitud;n.c.seccion=x.seccion;
     for(const [k] of CONTEOS)n.c[k]=x[k];
     n.p=(x.participantes||[]).map(p=>{const q={};PF.forEach(f=>{if(p[f.k]!=null)q[f.k]=String(p[f.k])});return q});
     n.manual=true;n.p.forEach((_,j)=>n.abiertos[j]=false);
@@ -1220,6 +1235,7 @@ document.addEventListener('focusout',()=>setTimeout(()=>{const a=document.active
   pintarYo();
   try{CAT=await (await fetch('catalogos.json')).json()}catch(e){aviso('No se pudieron cargar los catálogos',1)}
   CAT.colonia_info=CAT.colonia_info||{};CAT.colonia=CAT.colonia||[];
+  fetch('geo-ine.json').then(r=>r.ok?r.json():null).then(j=>{if(j)INE={colonias:indiceIne(j.colonias||[]),secciones:indiceIne(j.secciones||[])}}).catch(()=>{});
   try{const r=await fetch('/api/colonias');if(r.ok){const j=await r.json();for(const c of j.colonias||[])if(!CAT.colonia_info[c.nombre]){CAT.colonia.push(c.nombre);CAT.colonia_info[c.nombre]=[c.sector,c.latitud,c.longitud]}indicePuntos(j.puntos||[])}}catch(e){}
   renderStage();ofrecerBorrador();contarRegs();
 })();

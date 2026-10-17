@@ -63,18 +63,19 @@ export function unificar({ oficiales, equivalencias = {}, historico }) {
       // sin prefijo y solo existe como ejido oficial ("EL TAJITO" -> "EJIDO EL TAJITO")
       destino = (porClave.get(k) || (!k.startsWith('EJ:') && porClave.get('EJ:' + k)))?.nombre || null;
     }
-    if (destino && !oficialPorNombre.has(destino)) throw new Error(`Equivalencia "${esc}" -> "${destino}": esa colonia oficial no existe`);
-    if (destino) { asignacion.set(esc, destino); oficialPorNombre.get(destino).alias.add(esc); continue; }
-    // sin oficial: se agrupan variantes históricas entre sí y se conserva la escritura más frecuente
-    const k = 'H:' + claveColonia(esc);
-    const p = propias.get(k) || { escrituras: [] };
+    if (destino && oficialPorNombre.has(destino)) { asignacion.set(esc, destino); oficialPorNombre.get(destino).alias.add(esc); continue; }
+    // sin oficial: se agrupan variantes históricas entre sí y se conserva la escritura más frecuente;
+    // una equivalencia a un nombre no oficial ("MONTEREAL" -> "MONTERREAL") une ambas en esa colonia propia
+    const k = 'H:' + claveColonia(destino || esc);
+    const p = propias.get(k) || { escrituras: [], fijo: destino || null };
+    if (destino) p.fijo = destino;
     p.escrituras.push([esc, n]);
     propias.set(k, p);
     if (!(esc in equivalencias)) revision.push({ esc, n, sugerencias: parecidas(esc, porClave) });
   }
   for (const p of propias.values()) {
     p.escrituras.sort((a, b) => b[1] - a[1]);
-    p.nombre = p.escrituras[0][0];
+    p.nombre = p.fijo || p.escrituras[0][0];
     for (const [e] of p.escrituras) asignacion.set(e, p.nombre);
   }
   return { porClave, oficialPorNombre, propias, asignacion, revision: revision.sort((a, b) => b.n - a.n) };

@@ -68,7 +68,7 @@ for (const mod of ['acc', 'mal']) {
     const s = sec.dict[sec.c[i]];
     if (!FUERA.has(s)) o.s[s] = (o.s[s] || 0) + 1;
     const la = ds.vals.lat[i], lo = ds.vals.lng[i];
-    if (la != null && la > 25.3 && la < 25.8 && lo > -103.65 && lo < -103.1) { o.lat.push(la); o.lng.push(lo); puntos.push([la, lo, nombre]); }
+    if (la != null && la > 25.3 && la < 25.8 && lo > -103.65 && lo < -103.1) { o.lat.push(la); o.lng.push(lo); puntos.push([la, lo, nombre, FUERA.has(s) ? null : s]); }
   });
 }
 const mediana = (a) => { const s = [...a].sort((x, y) => x - y); return s.length ? +s[Math.floor(s.length / 2)].toFixed(5) : null; };
@@ -83,9 +83,40 @@ const coloniaInfo = Object.fromEntries(nombresFinales.map((n) => {
 // alias: clave de cada escritura conocida -> nombre del catálogo (el formulario convierte lo escrito al nombre oficial)
 const coloniaAlias = {};
 const ponAlias = (esc, n) => { const k = claveColonia(esc); if (k && !(k in coloniaAlias)) coloniaAlias[k] = n; };
+// prioridad si dos escrituras comparten clave: colonias oficiales y sus alias, después las solo históricas
+for (const n of U.oficialPorNombre.keys()) ponAlias(n, n);
+for (const [esc, n] of U.asignacion) if (U.oficialPorNombre.has(n)) ponAlias(esc, n);
+for (const g of U.porClave.values()) for (const a of g.alias) ponAlias(a, g.nombre);
 for (const n of nombresFinales) ponAlias(n, n);
 for (const [esc, n] of U.asignacion) ponAlias(esc, n);
-for (const g of U.porClave.values()) for (const a of g.alias) ponAlias(a, g.nombre);
+
+// ---- Colonias del INE (public/captura/geo-ine.json, npm run captura:ine): cada polígono del INE se liga a su
+// colonia del catálogo; las que no estaban se agregan como colonias oficiales nuevas (fuente "ine").
+const GEO_INE = path.join(RAIZ, 'public/captura/geo-ine.json');
+const coloniaIne = {};   // nombre en el INE -> nombre del catálogo
+const nuevasIne = new Set();
+if (fs.existsSync(GEO_INE)) {
+  const G = JSON.parse(fs.readFileSync(GEO_INE, 'utf8'));
+  const resolver = (n) => { const k = claveColonia(n); return coloniaAlias[k] || (!k.startsWith('EJ:') && coloniaAlias['EJ:' + k]) || null; };
+  const dentro = ([x, y], r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, yi] = r[i], [xj, yj] = r[j]; if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c; } return c; };
+  for (const c of G.colonias) {
+    if (c.n in coloniaIne) continue;
+    let destino = resolver(c.n);
+    if (!destino) { destino = c.n; nuevasIne.add(destino); nombresFinales.push(destino); ponAlias(destino, destino); }
+    coloniaIne[c.n] = destino;
+  }
+  // sector y centro de las nuevas: los registros históricos que caen en su polígono
+  for (const n of nuevasIne) {
+    const piezas = G.colonias.filter((c) => c.n === n).flatMap((c) => c.p);
+    const f = piezas.flat(), bb = [Math.min(...f.map((p) => p[0])), Math.min(...f.map((p) => p[1])), Math.max(...f.map((p) => p[0])), Math.max(...f.map((p) => p[1]))];
+    const votos = {};
+    for (const [la, lo, , s] of puntos) if (s && lo >= bb[0] && lo <= bb[2] && la >= bb[1] && la <= bb[3] && piezas.some((r) => dentro([lo, la], r))) votos[s] = (votos[s] || 0) + 1;
+    const sector = Object.entries(votos).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
+    const cx = f.reduce((s, p) => s + p[0], 0) / f.length, cy = f.reduce((s, p) => s + p[1], 0) / f.length;
+    coloniaInfo[n] = [sector, +cy.toFixed(5), +cx.toFixed(5), null, null];
+  }
+  console.log(`INE: ${Object.keys(coloniaIne).length} colonias con polígono · ${nuevasIne.size} nuevas en el catálogo`);
+}
 const idxCol = new Map(nombresFinales.map((n, i) => [n, i]));
 // puntos sin repetir (misma coordenada y colonia), como enteros: lat·1e5, lng·1e5, índice de colonia
 const vistos = new Set();
@@ -117,6 +148,7 @@ const cat = {
   colonia: nombresFinales,
   colonia_info: coloniaInfo,
   colonia_alias: coloniaAlias,
+  colonia_ine: coloniaIne,
   colonia_pts: coloniaPts,
   dependencia: dim('eve', 'dependencia'),
   accion: dim('eve', 'accion'),
@@ -143,17 +175,17 @@ const cat = {
 await db.query(DDL_COLONIAS);
 for (const [c, t] of [['tipo', 'text'], ['cp', 'text'], ['secciones', 'text'], ['alias', 'text']]) await db.query(`ALTER TABLE vialidad.colonias ADD COLUMN IF NOT EXISTS ${c} ${t}`);
 await db.query("COMMENT ON TABLE vialidad.colonias IS 'Catálogo de colonias del formulario de captura: oficiales (Excel por sección electoral + códigos postales), solo históricas (omega 2023) y agregadas al capturar'");
-await db.query("COMMENT ON COLUMN vialidad.colonias.fuente IS 'oficial (Excel / CP), historico (escrita en omega 2023 sin equivalente oficial), captura (agregada por un capturista) u osm'");
+await db.query("COMMENT ON COLUMN vialidad.colonias.fuente IS 'oficial (Excel / CP), ine (polígono del INE que no estaba en el Excel), historico (escrita en omega 2023 sin equivalente oficial), captura (agregada por un capturista) u osm'");
 await db.query("COMMENT ON COLUMN vialidad.colonias.registros IS 'Registros históricos de vialidad con esa colonia'");
 await db.query("COMMENT ON COLUMN vialidad.colonias.tipo IS 'COLONIA, FRACCIONAMIENTO, EJIDO, ZONA INDUSTRIAL…'");
 await db.query("COMMENT ON COLUMN vialidad.colonias.cp IS 'Código(s) postal(es)'");
 await db.query("COMMENT ON COLUMN vialidad.colonias.secciones IS 'Secciones electorales donde aparece (Excel)'");
 await db.query("COMMENT ON COLUMN vialidad.colonias.alias IS 'Otras escrituras de la colonia (Excel, CP y registros históricos)'");
-await db.query("DELETE FROM vialidad.colonias WHERE fuente IN ('historico', 'oficial')");
+await db.query("DELETE FROM vialidad.colonias WHERE fuente IN ('historico', 'oficial', 'ine')");
 const filas = nombresFinales.map((n) => {
   const [s, la, lo, tipo, cp] = coloniaInfo[n], g = U.oficialPorNombre.get(n);
   const alias = [...new Set([...(g ? g.alias : []), ...[...U.asignacion].filter(([, d]) => d === n).map(([e]) => e)])].filter((a) => a !== n).sort();
-  return [n, s, la, lo, colonias[n]?.n || null, g ? 'oficial' : 'historico', tipo, cp, g && g.secciones.size ? [...g.secciones].sort((a, b) => a - b).join(', ') : null, alias.join(' / ') || null];
+  return [n, s, la, lo, colonias[n]?.n || null, g ? 'oficial' : nuevasIne.has(n) ? 'ine' : 'historico', tipo, cp, g && g.secciones.size ? [...g.secciones].sort((a, b) => a - b).join(', ') : null, alias.join(' / ') || null];
 });
 for (let i = 0; i < filas.length; i += 150) {
   const p = [];
@@ -162,7 +194,7 @@ for (let i = 0; i < filas.length; i += 150) {
     ON CONFLICT (nombre) DO UPDATE SET sector = EXCLUDED.sector, latitud = EXCLUDED.latitud, longitud = EXCLUDED.longitud, registros = EXCLUDED.registros,
       fuente = EXCLUDED.fuente, tipo = EXCLUDED.tipo, cp = EXCLUDED.cp, secciones = EXCLUDED.secciones, alias = EXCLUDED.alias`, p);
 }
-console.log('✓ vialidad.colonias:', filas.filter((f) => f[5] === 'oficial').length, 'oficiales +', filas.filter((f) => f[5] === 'historico').length, 'solo históricas');
+console.log('✓ vialidad.colonias:', filas.filter((f) => f[5] === 'oficial').length, 'oficiales +', filas.filter((f) => f[5] === 'ine').length, 'del INE +', filas.filter((f) => f[5] === 'historico').length, 'solo históricas');
 await db.end();
 fs.mkdirSync(path.dirname(SALIDA), { recursive: true });
 fs.writeFileSync(SALIDA, JSON.stringify(cat));
