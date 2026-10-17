@@ -5,14 +5,17 @@
   "description": "Plataforma directiva de KPIs de vialidad y movilidad urbana · Torreón",
   "type": "module",
   "scripts": {
+    "dev": "node --env-file=.env scripts/dev.mjs",
     "db:revisar": "node scripts/migrar-postgres.mjs --revisar",
-    "db:migrar": "node --env-file=.env scripts/migrar-postgres.mjs"
+    "db:migrar": "node --env-file=.env scripts/migrar-postgres.mjs",
+    "db:incidencias": "node --env-file=.env scripts/crear-tabla-incidencias.mjs",
+    "captura:catalogos": "node --env-file=.env scripts/generar-catalogos.mjs"
   },
   "dependencies": {
-    "@vercel/functions": "^3.10.1"
+    "@vercel/functions": "^3.10.1",
+    "pg": "^8.13.1"
   },
   "devDependencies": {
-    "csv-parse": "^5.6.0",
-    "pg": "^8.13.1"
+    "csv-parse": "^5.6.0"
   }
 }

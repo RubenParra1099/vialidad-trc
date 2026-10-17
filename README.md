@@ -84,3 +84,28 @@ Abre http://localhost:8000 (en local no se pide contraseña).
 
 - Las ubicaciones de *eventos y apoyos* y *bitácora* se estiman a partir del domicilio; la ficha indica cuándo es aproximada.
 - Librerías cargadas desde CDN: ECharts 5.5.1 (jsDelivr), Leaflet 1.9.4, Leaflet.markercluster 1.5.3 y Leaflet.heat 0.2.0 (cdnjs).
+
+## Módulo de captura de incidencias
+
+Formulario por etapas en `public/captura/` para registrar incidencias nuevas de los seis módulos (accidente, evento/apoyo, bitácora, mal estacionado, corralón, detenido). Guarda en Neon:
+
+| Objeto | Contenido |
+|---|---|
+| `vialidad.incidencias` | un registro por incidencia (folio `VT-AA-000001`) |
+| `vialidad.incidencias_participantes` | personas y vehículos involucrados (accidentes) |
+| `vialidad.v_incidencias` | vista resumen para revisar en Neon Console |
+
+```bash
+npm install
+npm run db:incidencias      # crea/actualiza las tablas (no borra datos)
+npm run captura:catalogos   # regenera public/captura/catalogos.json desde los datos históricos
+npm run dev                 # http://localhost:8000/captura/
+```
+
+Los campos se definen en `lib/incidencias.js` (columnas de la tabla) y en `STEPS` dentro de `public/captura/index.html` (formulario). La API es `api/incidencias.js` (Vercel Function; requiere `DATABASE_URL` en las variables de entorno de Vercel).
+
+Al marcar un punto en el mapa, `api/geo.js` obtiene la calle y el número (Nominatim) y calcula las entre calles con las vías de OpenStreetMap alrededor del punto (las calles que cruzan la calle principal más cercanas a cada lado). Llena Ubicación, Referencias y Colonia si están vacíos; lo escrito a mano no se sobrescribe.
+
+**Colonias.** `vialidad.colonias` es el catálogo vivo: las 302 colonias históricas (variantes de escritura unificadas, `npm run captura:catalogos`) más las que se agregan solas al guardar un registro con una colonia que no estaba (`fuente = 'captura'`). En el mapa, la colonia se toma de OpenStreetMap si coincide con el catálogo; si no, por votación de los registros cercanos (históricos y capturados). Se llena sola con confianza ≥ 60 % (≈ 81 % de acierto); si no, se ofrecen las opciones más probables.
+
+**Catálogo oficial de colonias.** `node scripts/importar-colonias-oficiales.mjs "Colonias Torreon.xlsx" "codigos_postales_torreon.txt"` convierte las fuentes oficiales (Excel de colonias por sección electoral, pestaña TORREON, y la lista de códigos postales) a `scripts/datos/colonias_oficiales.json`. `npm run captura:catalogos` une esas colonias con las escritas en el histórico (`scripts/colonias-unificar.mjs`): cada escritura histórica queda como alias de su colonia oficial, y las que no tienen equivalente seguro se listan en `scripts/datos/colonias_revision.csv`. Las decisiones manuales se anotan en `scripts/datos/colonias_equivalencias.json` y se aplican al volver a correr `npm run captura:catalogos`.
