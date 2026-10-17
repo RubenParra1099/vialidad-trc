@@ -2264,7 +2264,7 @@ function startLife(){
   const place=x=>{if(!logo)return;const W=life.clientWidth,H=life.clientHeight,lw=logo.getBoundingClientRect().width||40,lh=logo.getBoundingClientRect().height||28;
     const px=Math.min(W-lw,Math.max(0,x/600*W-lw/2)),py=yAt(x)/120*H-lh/2;logo.style.transform=`translate(${px}px,${py}px)`};
   if(matchMedia('(prefers-reduced-motion: reduce)').matches){rect.setAttribute('width',600);place(600);if(logo)logo.style.opacity=1;return}
-  const P=6200,R=4000,HOLD=1300,FADE=700,t0=performance.now();
+  const P=8200,R=6000,HOLD=1300,FADE=700,t0=performance.now();
   const step=now=>{const t=(now-t0)%P;let x,op=1;
     if(t<R){const k=t/R;x=600*(k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2)}else{x=600;const f=t-R-HOLD;if(f>0)op=Math.max(0,1-f/FADE)}
     rect.setAttribute('width',x.toFixed(1));g.style.opacity=op;if(logo)logo.style.opacity=op*(t<120?t/120:1);place(x);
