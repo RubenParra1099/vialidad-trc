@@ -984,6 +984,11 @@ button.lgi:hover{border-color:var(--accent)}
 .vside.drawer .gs-hd{padding-right:38px}
 .vtog{display:inline-flex;align-items:center;gap:6px}
 .vtog.on{color:var(--accent);border-color:var(--accent)}
+.stog{display:inline-flex;align-items:center;gap:6px}
+.stog.on{color:var(--accent2);border-color:var(--accent2)}
+.leaflet-tooltip.sectlbl{background:transparent;border:0;box-shadow:none;padding:0;font:800 13px var(--font);color:var(--accent2);letter-spacing:.02em;
+  text-shadow:0 0 3px var(--mapbg),0 0 3px var(--mapbg),0 0 6px var(--mapbg);pointer-events:none}
+.leaflet-tooltip.sectlbl:before{display:none}
 .vtog em{font-style:normal;font-size:10.5px;font-weight:800;color:#fff;background:var(--accent);border-radius:999px;padding:0 6px;line-height:16px}
 .fullmap .vtog,.fullmap .vs-x{display:none!important}
 .fullmap .vside.drawer{position:static;display:flex;width:auto;box-shadow:none}
@@ -1612,7 +1617,7 @@ function chartCard(k,ch,i){
   const id=`c_${k}_${i}`;const h=ch.h||(ch.t==='map'?420:ch.t==='heat'?300:ch.t==='trend'?300:ch.t==='hbar'?Math.max(260,Math.min(480,(ch.top||10)*26+20)):ch.t==='donut'?340:280);
   let tools='';const icn={trend:'trend',donut:'pie',hbar:'chart',bar:'chart',heat:'cal',map:'map',pivot:'layers',table:'table',people:'users'}[ch.t];
   if(ch.t==='trend')tools=`<div class="minis" role="group" aria-label="Granularidad">${[['mes','Mensual'],['semana','Semanal'],['dia','Diario']].map(([v,l])=>`<button data-gran="${v}" class="${S.gran[k]===v?'on':''}">${l}</button>`).join('')}</div>`;
-  if(ch.t==='map'){const cur=S.mapColor[k]||ch.colorBy[0];const md=S.mapMode[k]||'cluster';tools=`<div class="minis">${MAPMODES.map(([v,l])=>`<button data-mapmode="${v}" class="${md===v?'on':''}">${l}</button>`).join('')}</div>${vtogBtn(k,id+'_wrap')}<button class="linkbtn fmbtn" data-fullmap="${k}" title="Abrir el mapa en una pestaña nueva, a pantalla completa">${FMI} Pantalla completa</button>`}
+  if(ch.t==='map'){const cur=S.mapColor[k]||ch.colorBy[0];const md=S.mapMode[k]||'cluster';tools=`<div class="minis">${MAPMODES.map(([v,l])=>`<button data-mapmode="${v}" class="${md===v?'on':''}">${l}</button>`).join('')}</div>${vtogBtn(k,id+'_wrap')}${sectBtn()}<button class="linkbtn fmbtn" data-fullmap="${k}" title="Abrir el mapa en una pestaña nueva, a pantalla completa">${FMI} Pantalla completa</button>`}
   if(ch.t==='pivot'){const pv=S.pivot[k]||{r:ch.rows,c:ch.cols};const opts=v=>pivotDims(k).map(d=>`<option value="${d}" ${d===v?'selected':''}>${LBL[d]}</option>`).join('');
     tools=`<select id="pvr_${k}" aria-label="Filas">${opts(pv.r)}</select><span class="hint">×</span><select id="pvc_${k}" aria-label="Columnas">${opts(pv.c)}</select>`}
   const sub=ch.sub||(ch.t==='hbar'||ch.t==='bar'||ch.t==='donut'?'Clic para filtrar':ch.t==='pivot'?'Clic en una celda para filtrar ambas dimensiones':ch.t==='table'?'Registros que cumplen los filtros · escribe en la fila de filtros de cada columna · clic en una fila para ver la ficha':ch.t==='people'?'Conductores y vehículos de los accidentes filtrados · busca por nombre, placa o teléfono':ch.t==='map'?'Clic en un punto para ver la ficha · activa o desactiva conceptos en la barra lateral':'');
@@ -1825,7 +1830,7 @@ function renderGeneral(){
     <div class="kpi"><div class="l">Detenidos</div><div class="v num">${fmt(R.det.length)}</div><div class="s">${fmt(R.cor.length)} vehículos al corralón</div></div></section>
    <div class="tiles">${GEN.filter(([k])=>k!=='bit').map(([k,l])=>`<button class="tile" data-mod="${k}" style="--tone:${MODS[k].tone}"><span class="h">${ic(MODS[k].icon,17)}${l}</span><span class="v num">${fmt(R[k].length)}</span><svg class="mb" viewBox="0 0 240 38" preserveAspectRatio="none" id="mb_${k}" aria-hidden="true"></svg><span class="s">${esc(MODS[k].sub)} · por mes</span><span class="go">Abrir módulo →</span></button>`).join('')}</div>
    <div class="grid">
-    <section class="card cc mapcard"><div class="hd"><div><h3>${ic('map',16)}Mapa operativo integrado</h3><div class="sub">Clic en un punto para ver su ficha completa</div>${periodCtl()}</div><div class="tools"><button class="linkbtn fmbtn" data-fullmap="general" title="Abrir el mapa en una pestaña nueva, a pantalla completa">${FMI} Pantalla completa</button></div></div>${isFull()?`<div class="gwrap sm" id="g_map_wrap"><aside class="gside" id="g_map_side" aria-label="Capas y conceptos"></aside><div class="lmap" id="g_map" style="height:560px"></div><aside class="gside vside drawer" id="g_map_vias" aria-label="Vialidades principales"></aside></div>`:`<div class="mlegend" id="g_map_lg"></div><div class="lmap" id="g_map" style="height:560px"></div>`}</section>
+    <section class="card cc mapcard"><div class="hd"><div><h3>${ic('map',16)}Mapa operativo integrado</h3><div class="sub">Clic en un punto para ver su ficha completa</div>${periodCtl()}</div><div class="tools">${sectBtn()}<button class="linkbtn fmbtn" data-fullmap="general" title="Abrir el mapa en una pestaña nueva, a pantalla completa">${FMI} Pantalla completa</button></div></div>${isFull()?`<div class="gwrap sm" id="g_map_wrap"><aside class="gside" id="g_map_side" aria-label="Capas y conceptos"></aside><div class="lmap" id="g_map" style="height:560px"></div><aside class="gside vside drawer" id="g_map_vias" aria-label="Vialidades principales"></aside></div>`:`<div class="mlegend" id="g_map_lg"></div><div class="lmap" id="g_map" style="height:560px"></div>`}</section>
     <section class="card cc s4"><div class="hd"><div><h3>${ic('clock',16)}Perfil horario</h3><div class="sub">Porcentaje de cada base por hora del día</div></div></div><div class="ch" id="g_hour" style="height:360px"></div></section>
     <section class="card cc s4"><div class="hd"><div><h3>${ic('pin',16)}Carga por sector</h3><div class="sub">Registros por sector en las bases con sector</div></div></div><div class="ch" id="g_sec" style="height:360px"></div></section>
     <section class="card cc s4"><div class="hd"><div><h3>${ic('crash',16)}Severidad mensual de accidentes</h3><div class="sub">Lesionados y fallecidos por mes</div></div></div><div class="ch" id="g_sev" style="height:360px"></div></section>
@@ -1986,6 +1991,27 @@ function roadHover(map,el){
   el.addEventListener('mouseleave',()=>{last=null;hide()});
   map.on('movestart zoomstart popupopen',hide);
 }
+/* ---------- Sectores del mapa (data/sectores-mapa.json): contornos y nombre, se prenden y apagan en todos los mapas */
+let SECT_ON=(()=>{try{return localStorage.getItem('panel.sectores')==='1'}catch(e){return false}})();
+function capaSectores(map){
+  if(!SECT.length)return null;
+  if(!map.getPane('sectores')){const p=map.createPane('sectores');p.style.zIndex=350;p.style.pointerEvents='none'}
+  const col=getComputedStyle(document.documentElement).getPropertyValue('--accent2').trim()||'#3a8fd6';
+  const g=L.layerGroup();const area=r=>Math.abs(r.reduce((s,[x,y],i)=>{const [x2,y2]=r[(i+1)%r.length];return s+x*y2-x2*y},0));
+  for(const s of SECT){
+    L.polygon(s.p.map(r=>r.map(([x,y])=>[y,x])),{pane:'sectores',color:col,weight:2,opacity:.85,dashArray:'7 5',fillColor:col,fillOpacity:.04,interactive:false}).addTo(g);
+    const r=s.p.reduce((a,b)=>area(b)>area(a)?b:a);const c=r.reduce(([sx,sy],[x,y])=>[sx+x/r.length,sy+y/r.length],[0,0]);
+    L.tooltip({permanent:true,direction:'center',className:'sectlbl',pane:'tooltipPane'}).setLatLng([c[1],c[0]]).setContent(esc(s.n)).addTo(g);
+  }
+  return g;
+}
+const sectBtn=()=>SECT.length?`<button class="linkbtn stog${SECT_ON?' on':''}" data-sectoggle aria-pressed="${SECT_ON}" title="Mostrar u ocultar los sectores (7, 8A … 11B) en los mapas">${ic('map',13)} Sectores</button>`:'';
+document.addEventListener('click',e=>{
+  if(!e.target.closest('[data-sectoggle]'))return;
+  SECT_ON=!SECT_ON;try{localStorage.setItem('panel.sectores',SECT_ON?'1':'0')}catch(x){}
+  for(const o of LM){if(!o.sect)continue;try{if(SECT_ON)o.sect.addTo(o.map);else o.sect.remove()}catch(x){}}
+  document.querySelectorAll('[data-sectoggle]').forEach(b=>{b.classList.toggle('on',SECT_ON);b.setAttribute('aria-pressed',SECT_ON)});
+});
 function createMap(el){
   const map=L.map(el,{preferCanvas:true,zoomSnap:.5,minZoom:11,maxZoom:19});
   map.attributionControl.setPrefix(false);map.attributionControl.addAttribution('Red vial © colaboradores de OpenStreetMap');
@@ -1998,6 +2024,7 @@ function createMap(el){
   roadHover(map,el);
   map.fitBounds(TRC);scaleW();
   const o={el,map,layer:null,rend:L.canvas({padding:.3,tolerance:TOUCH.matches?12:0}),index:new Map(),mode:'cluster'};
+  o.sect=capaSectores(map);if(o.sect&&SECT_ON)o.sect.addTo(map);
   LM.push(o);lro.observe(el);return o;
 }
 const ICONS={};
