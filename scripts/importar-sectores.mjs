@@ -1,6 +1,6 @@
 // Convierte el mapa de sectores (KML o KMZ exportado de Google My Maps: polígonos 7, 8A … 11B) a
-// public/captura/sectores-mapa.json. El formulario de captura guarda en vialidad.incidencias.sector_mapa
-// el sector donde cae el punto. Es independiente del Sector de vialidad (C-1, O-1, S-2…).
+// public/captura/sectores-mapa.json y public/data/sectores-mapa.json. El formulario de captura guarda en vialidad.incidencias.sector_mapa
+// el sector donde cae el punto, y el panel de indicadores lo agrega como dimensión en cada módulo. Es independiente del Sector de vialidad (C-1, O-1, S-2…).
 //
 //   npm run captura:sectores -- "MapaSectores Rubén.kmz"
 import fs from 'node:fs';
@@ -9,7 +9,8 @@ import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const SALIDA = path.join(RAIZ, 'public/captura/sectores-mapa.json');
+// una copia para la captura (protegida con su sesión) y otra para el panel (protegido con la contraseña general)
+const SALIDAS = ['public/captura/sectores-mapa.json', 'public/data/sectores-mapa.json'].map((p) => path.join(RAIZ, p));
 const fuente = process.argv[2];
 if (!fuente) { console.error('Indica el KML/KMZ: npm run captura:sectores -- "MapaSectores.kmz"'); process.exit(1); }
 
@@ -38,5 +39,6 @@ const sectores = [...kml.matchAll(/<Placemark>([\s\S]*?)<\/Placemark>/g)].map((m
     .filter((a) => a.length >= 4),
 })).filter((s) => s.n && s.p.length);
 if (!sectores.length) throw new Error('El mapa no trae polígonos con nombre');
-fs.writeFileSync(SALIDA, JSON.stringify({ generado: new Date().toISOString().slice(0, 10), fuente: path.basename(fuente), sectores }));
-console.log(`✓ ${path.relative(RAIZ, SALIDA)}: ${sectores.length} sectores (${sectores.map((s) => s.n).join(', ')}) · ${(fs.statSync(SALIDA).size / 1024).toFixed(0)} KB`);
+const json = JSON.stringify({ generado: new Date().toISOString().slice(0, 10), fuente: path.basename(fuente), sectores });
+for (const s of SALIDAS) fs.writeFileSync(s, json);
+console.log(`✓ ${sectores.length} sectores (${sectores.map((s) => s.n).join(', ')}) → ${SALIDAS.map((s) => path.relative(RAIZ, s)).join(' y ')} · ${(json.length / 1024).toFixed(0)} KB`);

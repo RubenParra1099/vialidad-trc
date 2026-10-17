@@ -1141,13 +1141,14 @@ td .z{color:var(--faint)}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
 <script>
-window.__omegaApp=function(RAW_TEXT,ROADS_TEXT){
+window.__omegaApp=function(RAW_TEXT,ROADS_TEXT,SECT_TEXT){
 'use strict';
 const $=(s,r=document)=>r.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmt=n=>Math.round(n).toLocaleString('es-MX');
 const pct=(a,b,d=1)=>b?(a/b*100).toLocaleString('es-MX',{maximumFractionDigits:d,minimumFractionDigits:0})+'%':'—';
-const title=s=>s==='SIN DATO'?'Sin dato':String(s).toLowerCase().replace(/(^|[\s(\/-])([a-záéíóúñü])/g,(m,a,b)=>a+b.toUpperCase());
+// códigos como "8A", "11B", "C-2" o "S-1" se dejan tal cual
+const title=s=>s==='SIN DATO'?'Sin dato':/^([A-Z]-?)?\d+[A-Z]?$/.test(String(s))?String(s):String(s).toLowerCase().replace(/(^|[\s(\/-])([a-záéíóúñü])/g,(m,a,b)=>a+b.toUpperCase());
 
 /* ---------- Iconos */
 const IP={
@@ -1205,11 +1206,28 @@ for(const [k,r] of Object.entries(RAW)){
   if(r.vals.lat){ds.geo=r.vals.lat.map(v=>v!=null).reduce((a,b)=>a+(b?1:0),0)}
   DS[k]=ds;
 }
+/* Sector del mapa de sectores (data/sectores-mapa.json: 7, 8A … 11B) según la ubicación de cada registro.
+   Se calcula al cargar para no depender de regenerar omega.json; sin ubicación o fuera del mapa: SIN DATO. */
+const SECT=(()=>{try{return SECT_TEXT?(JSON.parse(SECT_TEXT).sectores||[]):[]}catch(e){return []}})();
+const ordSector=(a,b)=>(parseInt(a)||0)-(parseInt(b)||0)||a.localeCompare(b,'es');
+const SECT_NOMBRES=[...new Set(SECT.map(s=>s.n))].sort(ordSector);
+{
+  const idx=SECT.map(s=>{const f=s.p.flat();return {i:SECT_NOMBRES.indexOf(s.n),p:s.p,b:[Math.min(...f.map(q=>q[0])),Math.min(...f.map(q=>q[1])),Math.max(...f.map(q=>q[0])),Math.max(...f.map(q=>q[1]))]}});
+  const dentro=(x,y,r)=>{let c=false;for(let a=0,b=r.length-1;a<r.length;b=a++){const [xa,ya]=r[a],[xb,yb]=r[b];if((ya>y)!==(yb>y)&&x<(xb-xa)*(y-ya)/(yb-ya)+xa)c=!c}return c};
+  const dict=[...SECT_NOMBRES,'SIN DATO'],sin=dict.length-1;
+  for(const ds of Object.values(DS)){
+    const la=ds.vals.lat,lo=ds.vals.lng,c=new Int16Array(ds.n).fill(sin);
+    if(la&&idx.length)for(let i=0;i<ds.n;i++){const y=la[i],x=lo[i];if(y==null)continue;
+      for(const s of idx){if(x<s.b[0]||x>s.b[2]||y<s.b[1]||y>s.b[3])continue;if(s.p.some(r=>dentro(x,y,r))){c[i]=s.i;break}}}
+    let j=0;ds.dims.sector_mapa={dict,c,col:dict.map(v=>v==='SIN DATO'?-1:j++)};
+  }
+}
 const ORDER={
   edad:['10-17','18-24','25-34','35-44','45-54','55-64','65+','SIN DATO'],
   etilico:['<0.40','0.40-0.79','0.80-1.49','≥1.50','OVER (>LÍMITE)','SIN DATO'],
   modelo:['ANTES 2000','2000-2009','2010-2014','2015-2019','2020-2024','SIN DATO'],
-  mes:MESES,dow:DOWS,hora:HORAS
+  mes:MESES,dow:DOWS,hora:HORAS,
+  sector_mapa:[...SECT_NOMBRES,'SIN DATO']
 };
 /* participantes de accidentes agrupados por accidente */
 const PBY=Array.from({length:DS.acc.n},()=>[]);ACCP.acc.forEach((a,j)=>PBY[a].push(j));
@@ -1222,6 +1240,7 @@ const FL={
  mal:{fecha:'Fecha',hm:'Hora',domicilio:'Domicilio',colonia_full:'Colonia',sector:'Sector',evento:'Evento',unidades:'Unidad(es)',agentes:'Agente(s)',grupo:'Grupo',estatus:'Estatus',motivo:'Motivo no atendido',origen:'Origen',operador:'Operador en turno',razonamiento:'Razonamiento'},
  det:{fecha:'Fecha',hm:'Hora remisión',nombre:'Nombre del conductor',direccion:'Dirección del conductor',edad_n:'Edad',ingreso:'Tipo de ingreso',grado:'Grado etílico',folio911:'Folio 911',remision:'N° de remisión',ubicacion:'Ubicación del vehículo',tipo:'Tipo',marca_full:'Marca',submarca:'Submarca',anio:'Año',color:'Color',placas:'Placas',serie:'Serie',infraccion:'Infracción',numerales:'Numerales',inventario:'Inventario',agentes:'Agente',unidad:'Unidad',grua_full:'Grúa',autoridad:'Autoridad',rnd:'Registro Nacional de Detenidos',operador:'Operador en turno'}
 };
+for(const k of Object.keys(FL))FL[k].sector_mapa='Sector (mapa)';
 const PFL={n:'#',nombre:'Nombre',sexo:'Sexo',edad:'Edad',tel:'Teléfono',domicilio:'Domicilio',servicio:'Servicio',tiposerv:'Tipo de servicio',clasif:'Clasificación',marca:'Marca',modelo:'Modelo',placas:'Placas',color:'Color'};
 function F(k,key,i){
   const ds=DS[k];
@@ -1248,7 +1267,7 @@ function searchMask(k,q){
   const toks=norm(q).split(/\s+/).filter(Boolean);if(!toks.length)return null;
   const h=hay(k),m=new Uint8Array(h.length);for(let i=0;i<h.length;i++){const s=h[i];let ok=1;for(const t of toks)if(!s.includes(t)){ok=0;break}m[i]=ok}return m;
 }
-const LBL={sector:'Sector',jurisdiccion:'Jurisdicción',origen:'Origen',grupo:'Grupo',tipo:'Tipo',danos:'Daños',causa:'Causa',motivo:'Motivo no atendido',estatus:'Estatus',colonia:'Colonia',vehiculo:'Vehículo',servicio:'Servicio',sexo:'Sexo conductor',edad:'Edad',mes:'Mes',dow:'Día',hora:'Hora',dependencia:'Dependencia',accion:'Acción',unidad:'Unidad',clave:'Clave / razonamiento',marca:'Marca',modelo:'Modelo (año)',grua:'Grúa',evento:'Evento',etilico:'Grado etílico',autoridad:'Autoridad'};
+const LBL={sector:'Sector',sector_mapa:'Sector (mapa)',jurisdiccion:'Jurisdicción',origen:'Origen',grupo:'Grupo',tipo:'Tipo',danos:'Daños',causa:'Causa',motivo:'Motivo no atendido',estatus:'Estatus',colonia:'Colonia',vehiculo:'Vehículo',servicio:'Servicio',sexo:'Sexo conductor',edad:'Edad',mes:'Mes',dow:'Día',hora:'Hora',dependencia:'Dependencia',accion:'Acción',unidad:'Unidad',clave:'Clave / razonamiento',marca:'Marca',modelo:'Modelo (año)',grua:'Grúa',evento:'Evento',etilico:'Grado etílico',autoridad:'Autoridad'};
 
 /* ---------- Módulos */
 const MODS={
@@ -1256,7 +1275,7 @@ const MODS={
  acc:{title:'Accidentes viales',sub:'Choques, lesionados y fallecidos',icon:'crash',tone:'var(--rose)',noun:'reportes',
    h1:['Accidentes',' viales'],desc:'Reportes de hechos de tránsito con su atención, severidad y ubicación.',
    metrics:[['count','Reportes'],['les','Lesionados'],['fal','Fallecidos'],['nveh','Vehículos']],
-   groups:[['Territorio','pin',['sector','colonia','jurisdiccion']],['Hecho vial','crash',['tipo','causa','danos']],['Operación','radio',['origen','grupo','estatus','motivo']],['Participantes','users',['vehiculo','servicio','sexo','edad']],['Tiempo','clock',['mes','dow','hora']]],
+   groups:[['Territorio','pin',['sector','sector_mapa','colonia','jurisdiccion']],['Hecho vial','crash',['tipo','causa','danos']],['Operación','radio',['origen','grupo','estatus','motivo']],['Participantes','users',['vehiculo','servicio','sexo','edad']],['Tiempo','clock',['mes','dow','hora']]],
    kpis:c=>[
      {l:'Reportes',v:fmt(c.idx.length),s:fmt(c.idx.length/c.days)+' por día'},
      {l:'Atendidos',v:pct(c.share('estatus','ATENDIDO'),c.idx.length),meter:c.share('estatus','ATENDIDO')/(c.idx.length||1),s:fmt(c.share('estatus','ATENDIDO'))+' con intervención',tone:'accent'},
@@ -1271,7 +1290,7 @@ const MODS={
      {t:'bar',dim:'sector',span:4,title:'Sectores'},
      {t:'donut',dim:'danos',span:4,title:'Daños'},
      {t:'hbar',dim:'motivo',span:4,title:'Motivo de no atención',hide:['SIN DATO']},
-     {t:'map',span:8,title:'Mapa de incidencia',colorBy:['tipo','danos','estatus','jurisdiccion','sector']},
+     {t:'map',span:8,title:'Mapa de incidencia',colorBy:['tipo','danos','estatus','jurisdiccion','sector','sector_mapa']},
      {t:'hbar',dim:'colonia',top:15,span:4,title:'Colonias con más reportes',hide:['SIN DATO','OTROS'],h:420},
      {t:'hbar',dim:'grupo',span:4,title:'Grupo operativo'},
      {t:'donut',dim:'jurisdiccion',span:4,title:'Jurisdicción'},
@@ -1279,14 +1298,15 @@ const MODS={
      {t:'bar',dim:'vehiculo',span:4,title:'Vehículo principal',hide:['SIN DATO']},
      {t:'bar',dim:'edad',span:4,title:'Edad del conductor',hide:['SIN DATO']},
      {t:'donut',dim:'sexo',span:4,title:'Sexo del conductor'},
+     {t:'bar',dim:'sector_mapa',span:12,title:'Sectores del mapa',sub:'Según la ubicación del registro · clic para filtrar',hide:['SIN DATO']},
      {t:'pivot',span:12,title:'Tabla cruzada',rows:'sector',cols:'tipo'},
-     {t:'table',span:12,title:'Registro detallado de accidentes',cols:['fecha','hm','ubicacion','colonia_full','sector','tipo','causa','danos','estatus','les','fal','p_nombres','p_placas','p_tels','unidades','agentes']},
+     {t:'table',span:12,title:'Registro detallado de accidentes',cols:['fecha','hm','ubicacion','colonia_full','sector','sector_mapa','tipo','causa','danos','estatus','les','fal','p_nombres','p_placas','p_tels','unidades','agentes']},
      {t:'people',span:12,title:'Personas y vehículos involucrados'}
    ]},
  eve:{title:'Eventos y apoyos',sub:'Puntos fijos, obras y apoyos',icon:'cone',tone:'var(--accent2)',noun:'registros',
    h1:['Eventos',' y apoyos'],desc:'Servicios de vialidad: puntos fijos, escuelas, obras, semáforos y apoyos a dependencias.',
    metrics:[['count','Registros']],
-   groups:[['Territorio','pin',['sector']],['Servicio','tag',['accion','dependencia']],['Operación','radio',['origen','grupo']],['Tiempo','clock',['mes','dow','hora']]],
+   groups:[['Territorio','pin',['sector','sector_mapa']],['Servicio','tag',['accion','dependencia']],['Operación','radio',['origen','grupo']],['Tiempo','clock',['mes','dow','hora']]],
    kpis:c=>[
      {l:'Registros',v:fmt(c.idx.length),s:fmt(c.idx.length/c.days)+' por día'},
      {l:'Puntos fijos',v:pct(c.shareAny('accion',v=>v.startsWith('PUNTOS FIJOS')),c.idx.length),meter:c.shareAny('accion',v=>v.startsWith('PUNTOS FIJOS'))/(c.idx.length||1),s:'Incluye escuelas',tone:'accent'},
@@ -1300,15 +1320,16 @@ const MODS={
      {t:'hbar',dim:'dependencia',top:15,span:6,title:'Dependencia apoyada',h:400},
      {t:'heat',span:6,title:'Día y hora',sub:'Clic en una celda para filtrar'},
      {t:'bar',dim:'sector',span:6,title:'Sectores'},
-     {t:'map',span:8,title:'Mapa de eventos y apoyos',colorBy:['accion','dependencia','origen','sector'],h:460},
+     {t:'map',span:8,title:'Mapa de eventos y apoyos',colorBy:['accion','dependencia','origen','sector','sector_mapa'],h:460},
      {t:'hbar',dim:'grupo',span:4,title:'Grupo operativo',h:460},
+     {t:'bar',dim:'sector_mapa',span:12,title:'Sectores del mapa',sub:'Según la ubicación del registro · clic para filtrar',hide:['SIN DATO']},
      {t:'pivot',span:12,title:'Tabla cruzada',rows:'accion',cols:'sector'},
-     {t:'table',span:12,title:'Registro detallado',cols:['fecha','hm','domicilio','sector','accion','dependencia','grupo','unidades','agentes','origen','razonamiento']}
+     {t:'table',span:12,title:'Registro detallado',cols:['fecha','hm','domicilio','sector','sector_mapa','accion','dependencia','grupo','unidades','agentes','origen','razonamiento']}
    ]},
  bit:{title:'Bitácora',sub:'Actividad de unidades',icon:'book',tone:'var(--amber)',noun:'registros',
    h1:['Bitácora',' de unidades'],desc:'Movimientos y claves reportadas por las unidades a lo largo del año.',
    metrics:[['count','Registros']],
-   groups:[['Unidades','radio',['unidad','grupo']],['Clave','tag',['clave']],['Tiempo','clock',['mes','dow','hora']]],
+   groups:[['Territorio','pin',['sector_mapa']],['Unidades','radio',['unidad','grupo']],['Clave','tag',['clave']],['Tiempo','clock',['mes','dow','hora']]],
    kpis:c=>[
      {l:'Registros',v:fmt(c.idx.length),s:fmt(c.idx.length/c.days)+' por día'},
      {l:'Unidades activas',v:fmt(c.distinct('unidad')),s:'Con al menos un registro'},
@@ -1320,15 +1341,16 @@ const MODS={
      {t:'donut',dim:'grupo',span:4,title:'Grupo'},
      {t:'hbar',dim:'unidad',top:20,span:6,title:'Unidades con más registros',h:460},
      {t:'hbar',dim:'clave',span:6,title:'Claves / razonamiento',h:460},
-     {t:'map',span:7,title:'Mapa de la bitácora',colorBy:['clave','grupo'],h:440},
+     {t:'map',span:7,title:'Mapa de la bitácora',colorBy:['clave','grupo','sector_mapa'],h:440},
      {t:'heat',span:5,title:'Día y hora',sub:'Clic en una celda para filtrar',h:440},
+     {t:'bar',dim:'sector_mapa',span:12,title:'Sectores del mapa',sub:'Según la ubicación del registro · clic para filtrar',hide:['SIN DATO']},
      {t:'pivot',span:12,title:'Tabla cruzada',rows:'unidad',cols:'mes'},
-     {t:'table',span:12,title:'Registro detallado',cols:['fecha','hm','unidad','grupo','domicilio','clave','razonamiento','operador']}
+     {t:'table',span:12,title:'Registro detallado',cols:['fecha','hm','unidad','grupo','domicilio','sector_mapa','clave','razonamiento','operador']}
    ]},
  cor:{title:'Vehículos al corralón',sub:'Remisiones y grúas',icon:'tow',tone:'var(--c5)',noun:'vehículos',
    h1:['Vehículos',' al corralón'],desc:'Unidades remitidas al corralón por tipo, marca, antigüedad y grúa.',
    metrics:[['count','Vehículos']],
-   groups:[['Vehículo','tow',['tipo','marca','modelo']],['Servicio','radio',['grua']],['Tiempo','clock',['mes','dow']]],
+   groups:[['Territorio','pin',['sector_mapa']],['Vehículo','tow',['tipo','marca','modelo']],['Servicio','radio',['grua']],['Tiempo','clock',['mes','dow']]],
    kpis:c=>[
      {l:'Vehículos remitidos',v:fmt(c.idx.length),s:fmt(c.idx.length/c.days)+' por día'},
      {l:'Motocicletas',v:pct(c.share('tipo','MOTO'),c.idx.length),meter:c.share('tipo','MOTO')/(c.idx.length||1),s:fmt(c.share('tipo','MOTO'))+' unidades',tone:'accent'},
@@ -1340,16 +1362,17 @@ const MODS={
      {t:'donut',dim:'tipo',span:4,title:'Tipo de vehículo'},
      {t:'hbar',dim:'marca',top:15,span:6,title:'Marcas',h:400,hide:['OTROS','SIN DATO']},
      {t:'bar',dim:'modelo',span:6,title:'Antigüedad del vehículo',h:400},
-     {t:'map',span:8,title:'Ubicación de las remisiones',colorBy:['tipo','grua','modelo']},
+     {t:'map',span:8,title:'Ubicación de las remisiones',colorBy:['tipo','grua','modelo','sector_mapa']},
      {t:'donut',dim:'grua',span:4,title:'Grúa',h:420},
      {t:'bar',dim:'dow',span:12,title:'Remisiones por día de la semana'},
+     {t:'bar',dim:'sector_mapa',span:12,title:'Sectores del mapa',sub:'Según la ubicación del registro · clic para filtrar',hide:['SIN DATO']},
      {t:'pivot',span:12,title:'Tabla cruzada',rows:'marca',cols:'mes'},
-     {t:'table',span:12,title:'Registro detallado',cols:['fecha','domicilio','tipo','marca_full','submarca','anio','color','placas','serie','infraccion','numeral','inventario','grua_full','agentes','observaciones']}
+     {t:'table',span:12,title:'Registro detallado',cols:['fecha','domicilio','sector_mapa','tipo','marca_full','submarca','anio','color','placas','serie','infraccion','numeral','inventario','grua_full','agentes','observaciones']}
    ]},
  mal:{title:'Mal estacionados',sub:'Infracciones de estacionamiento',icon:'park',tone:'var(--c6)',noun:'reportes',
    h1:['Vehículos',' mal estacionados'],desc:'Reportes de estacionamiento indebido, abandono, exceso de velocidad y su atención.',
    metrics:[['count','Reportes']],
-   groups:[['Territorio','pin',['sector','colonia']],['Evento','park',['evento']],['Operación','radio',['origen','grupo','estatus','motivo']],['Tiempo','clock',['mes','dow','hora']]],
+   groups:[['Territorio','pin',['sector','sector_mapa','colonia']],['Evento','park',['evento']],['Operación','radio',['origen','grupo','estatus','motivo']],['Tiempo','clock',['mes','dow','hora']]],
    kpis:c=>[
      {l:'Reportes',v:fmt(c.idx.length),s:fmt(c.idx.length/c.days)+' por día'},
      {l:'Atendidos',v:pct(c.share('estatus','ATENDIDO'),c.idx.length),meter:c.share('estatus','ATENDIDO')/(c.idx.length||1),tone:'accent'},
@@ -1361,18 +1384,19 @@ const MODS={
      {t:'donut',dim:'evento',span:4,title:'Tipo de evento'},
      {t:'heat',span:6,title:'Día y hora',sub:'Clic en una celda para filtrar'},
      {t:'bar',dim:'sector',span:6,title:'Sectores'},
-     {t:'map',span:8,title:'Mapa de reportes',colorBy:['evento','estatus','sector']},
+     {t:'map',span:8,title:'Mapa de reportes',colorBy:['evento','estatus','sector','sector_mapa']},
      {t:'hbar',dim:'colonia',top:15,span:4,title:'Colonias con más reportes',hide:['SIN DATO','OTROS'],h:420},
      {t:'hbar',dim:'grupo',span:4,title:'Grupo operativo'},
      {t:'hbar',dim:'motivo',span:4,title:'Motivo de no atención',hide:['SIN DATO']},
      {t:'donut',dim:'origen',span:4,title:'Origen'},
+     {t:'bar',dim:'sector_mapa',span:12,title:'Sectores del mapa',sub:'Según la ubicación del registro · clic para filtrar',hide:['SIN DATO']},
      {t:'pivot',span:12,title:'Tabla cruzada',rows:'evento',cols:'sector'},
-     {t:'table',span:12,title:'Registro detallado',cols:['fecha','hm','domicilio','colonia_full','sector','evento','estatus','motivo','unidades','agentes','razonamiento']}
+     {t:'table',span:12,title:'Registro detallado',cols:['fecha','hm','domicilio','colonia_full','sector','sector_mapa','evento','estatus','motivo','unidades','agentes','razonamiento']}
    ]},
  det:{title:'Detenidos',sub:'Remisiones por alcoholemia',icon:'shield',tone:'var(--c4)',noun:'detenidos',
    h1:['Conductores',' detenidos'],desc:'Remisiones al juez calificador o ministerio público, con grado etílico y vehículo.',
    metrics:[['count','Detenidos']],
-   groups:[['Persona','users',['edad','etilico']],['Vehículo','tow',['tipo','marca','grua']],['Autoridad','shield',['autoridad']],['Tiempo','clock',['mes','dow','hora']]],
+   groups:[['Territorio','pin',['sector_mapa']],['Persona','users',['edad','etilico']],['Vehículo','tow',['tipo','marca','grua']],['Autoridad','shield',['autoridad']],['Tiempo','clock',['mes','dow','hora']]],
    kpis:c=>[
      {l:'Detenidos',v:fmt(c.idx.length),s:fmt(c.idx.length/c.days)+' por día'},
      {l:'Grado etílico ≥ 0.80',v:pct(c.share('etilico','0.80-1.49')+c.share('etilico','≥1.50')+c.share('etilico','OVER (>LÍMITE)'),c.idx.length-c.share('etilico','SIN DATO')),s:'Sobre detenidos con medición',tone:'rose'},
@@ -1387,10 +1411,11 @@ const MODS={
      {t:'hbar',dim:'marca',top:12,span:4,title:'Marca del vehículo',hide:['OTROS','SIN DATO']},
      {t:'donut',dim:'tipo',span:4,title:'Tipo de vehículo'},
      {t:'donut',dim:'autoridad',span:4,title:'Autoridad'},
-     {t:'map',span:8,title:'Ubicación de las detenciones',colorBy:['etilico','edad','autoridad']},
+     {t:'map',span:8,title:'Ubicación de las detenciones',colorBy:['etilico','edad','autoridad','sector_mapa']},
      {t:'donut',dim:'grua',span:4,title:'Grúa',h:420},
+     {t:'bar',dim:'sector_mapa',span:12,title:'Sectores del mapa',sub:'Según la ubicación del registro · clic para filtrar',hide:['SIN DATO']},
      {t:'pivot',span:12,title:'Tabla cruzada',rows:'edad',cols:'etilico'},
-     {t:'table',span:12,title:'Registro detallado',cols:['fecha','hm','nombre','edad_n','direccion','grado','placas','marca_full','submarca','color','ubicacion','autoridad','remision','folio911','agentes']}
+     {t:'table',span:12,title:'Registro detallado',cols:['fecha','hm','nombre','edad_n','direccion','grado','placas','marca_full','submarca','color','ubicacion','sector_mapa','autoridad','remision','folio911','agentes']}
    ]}
 };
 const MOD_KEYS=Object.keys(MODS).filter(k=>k!=='bit').concat('bit');
@@ -2305,10 +2330,12 @@ paintNav();render();
   const t=document.getElementById('loadTxt');
   try{
     const [d,r]=await Promise.all([fetch('data/omega.json',{cache:'no-cache'}),fetch('data/red-vial.txt',{cache:'no-cache'})]);
+    // mapa de sectores (7, 8A … 11B); si no está, el panel funciona igual sin esa dimensión
+    const sect=await fetch('data/sectores-mapa.json',{cache:'no-cache'}).then(x=>x.ok?x.text():null).catch(()=>null);
     if(!d.ok||!r.ok)throw new Error('HTTP '+d.status+' / '+r.status);
     t.textContent='Preparando tablero…';
     const [dt,rt]=await Promise.all([d.text(),r.text()]);
-    window.__omegaApp(dt,rt);
+    window.__omegaApp(dt,rt,sect);
   }catch(e){t.textContent='No se pudieron cargar los datos ('+e.message+'). Recarga la página.';console.error(e)}
 })();
 </script>
