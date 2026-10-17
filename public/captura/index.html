@@ -303,6 +303,27 @@ tbody tr:hover td{background:var(--panel2)}
 .mbox p{color:var(--muted);margin:0 0 20px}
 .mbox .acts{display:flex;flex-direction:column;gap:8px}
 
+/* ---------- Cuenta y usuarios */
+.cuenta{position:relative}
+.cuenta .ini{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--onaccent);font-size:10.5px;font-weight:800}
+.cuenta .yo{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.menu{position:absolute;right:0;top:44px;z-index:60;min-width:230px;padding:6px;display:flex;flex-direction:column}
+.menu .quien{padding:8px 10px 10px;border-bottom:1px solid var(--line);margin-bottom:4px}
+.menu .quien b{display:block;font-size:13.5px}.menu .quien small{color:var(--muted);font-size:12px}
+.menu button{display:flex;align-items:center;gap:9px;border:0;background:transparent;border-radius:8px;padding:9px 10px;text-align:left;font-weight:600;font-size:13.5px}
+.menu button:hover{background:var(--panel2)}
+.ro{display:flex;align-items:center;gap:10px;margin:-6px 0 18px;padding:9px 12px;border-radius:11px;background:color-mix(in oklab,var(--accent2) 13%,transparent);font-size:13px}
+.capt{display:flex;align-items:center;gap:6px;margin:14px 0 0;font-size:13px;color:var(--muted)}
+.capt b{color:var(--fg)}
+.utab td .btn{height:30px;font-size:12.5px;padding:0 10px}
+.utab select{height:32px;border-radius:8px;border:1px solid var(--line2);background:var(--panel2);padding:0 8px}
+.utab tbody tr{cursor:default}
+.tmp{display:flex;align-items:center;justify-content:center;gap:10px;margin:14px 0 6px;flex-wrap:wrap}
+.tmp code{font-size:22px;font-weight:800;letter-spacing:.06em;padding:8px 14px;border-radius:10px;background:var(--panel2);border:1px solid var(--line2);user-select:all}
+.mform{display:flex;flex-direction:column;gap:10px;text-align:left;margin:6px 0 4px}
+.mform label{font-weight:650;font-size:13px;margin-bottom:-4px}
+.merr{color:var(--rose);font-weight:600;font-size:13px;text-align:left}
+
 /* ---------- Responsivo */
 @media (max-width:1240px){.wrap{grid-template-columns:220px minmax(0,1fr)}.sumcol{display:none}}
 @media (max-width:900px){
@@ -329,7 +350,8 @@ tbody tr:hover td{background:var(--panel2)}
   .maptools .in{max-width:none;flex:1 1 100%}
   .coord{margin-left:0}
   .wrap{padding-bottom:100px}
-  .top .linkbtn{display:none}
+  .top>.linkbtn{display:none}
+  .cuenta .yo{display:none}
   .g{gap:14px}
   .s2,.s3,.s4,.s5,.s6,.s7,.s8,.s9{grid-column:span 12}
   .tipos{grid-template-columns:minmax(0,1fr)}
@@ -349,9 +371,18 @@ tbody tr:hover td{background:var(--panel2)}
   <nav class="tabs" aria-label="Secciones">
     <button class="tab on" data-view="nueva"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span class="lbl">Captura</span></button>
     <button class="tab" data-view="registros"><svg class="i" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span class="lbl">Registros</span><span class="n num" id="nRegs" hidden></span></button>
+    <button class="tab" data-view="usuarios" id="tabUsuarios" hidden><svg class="i" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg><span class="lbl">Usuarios</span></button>
   </nav>
   <div class="sp"></div>
   <a class="linkbtn hide-m" href="../" title="Panel de indicadores"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Panel</a>
+  <div class="cuenta" id="cuenta" hidden>
+    <button class="linkbtn" id="cuentaBtn" aria-haspopup="menu" aria-expanded="false"><span class="ini" id="yoIni"></span><span class="yo" id="yoNombre"></span></button>
+    <div class="menu card" id="cuentaMenu" role="menu" hidden>
+      <div class="quien"><b id="yoNombre2"></b><small id="yoRol"></small></div>
+      <button role="menuitem" id="cambiarBtn"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Cambiar contraseña</button>
+      <button role="menuitem" id="salirBtn"><svg class="i" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Cerrar sesión</button>
+    </div>
+  </div>
   <button class="iconbtn" id="themeBtn" aria-label="Cambiar tema"></button>
 </header>
 
@@ -370,6 +401,20 @@ tbody tr:hover td{background:var(--panel2)}
     <div class="filt"><input class="in" type="search" id="rq" placeholder="Buscar folio, ubicación, nombre, placa, agente…"><div class="chips sm" id="rtipos"></div></div>
     <div class="tw" id="rtable"></div>
   </section>
+</main>
+
+<main id="vUsuarios" class="recs" hidden>
+  <div class="hd"><div><h1>Usuarios</h1><p>Quién puede entrar a la captura. Al dar de alta a alguien se genera una contraseña temporal; la persona la cambia en su primer acceso.</p></div></div>
+  <section class="card">
+    <form class="filt" id="uForm" autocomplete="off">
+      <input class="in" id="uUsuario" placeholder="Usuario (p. ej. jperez)" autocapitalize="none" spellcheck="false" style="max-width:200px">
+      <input class="in up" id="uNombre" placeholder="Nombre completo" style="max-width:320px">
+      <select class="in" id="uRol" style="max-width:170px"><option value="capturista">Capturista</option><option value="admin">Administrador</option></select>
+      <button class="btn pri sm" id="uAgregar"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Dar de alta</button>
+    </form>
+    <div class="tw" id="utable"></div>
+  </section>
+  <p class="help" style="margin-top:12px">Capturista: captura y consulta; solo edita lo que capturó. Administrador: además da de alta usuarios y edita cualquier registro. Los usuarios se guardan en <code>vialidad.usuarios</code> (Neon).</p>
 </main>
 
 <footer class="foot" id="foot">
@@ -504,7 +549,6 @@ const STEPS=[
   ]},
   {id:'revision',t:'Narrativa y revisión',sm:'Razonamiento y guardar',ic:'file',special:'rev',d:'Describe los hechos, revisa la información y guarda el registro.',fields:[
     F('razonamiento','Razonamiento / narrativa de los hechos','textarea',{rec:1,noup:1,ph:'Describe qué ocurrió, la intervención realizada y el resultado…'}),
-    F('capturista','Capturó','text',{span:6,rec:1,ph:'Tu nombre o usuario'}),
   ]},
 ];
 // Participantes de accidente (tabla vialidad.incidencias_participantes)
@@ -628,7 +672,8 @@ function renderStage(){
   const st=paso(), ps=pasos(), i=ps.indexOf(st);
   const tp=TIPOS[S.tipo];
   let h=`<div class="eyebrow">Etapa ${i+1} de ${S.tipo?ps.length:'—'}${tp?` <span class="pill" style="--tone:${tp.c}">${ic(tp.ic,13)}${esc(tp.l)}</span>`:''}</div><h1 class="sth">${esc(pick(st.t,S.tipo))}</h1><p class="std">${esc(pick(st.d,S.tipo))}</p>`;
-  if(S.id)h+=`<div class="editing">${ic('edit',15)}<span>Editando el registro <b>${esc(S.folio)}</b>. Los cambios se guardan al pulsar <b>Guardar cambios</b>.</span></div>`;
+  if(S.id&&S.editable===false)h+=`<div class="ro">${ic('alert',15)}<span>Solo lectura: este registro lo capturó <b>${esc(S.capturistaReg||'otra persona')}</b>. Solo esa persona o un administrador pueden modificarlo.</span></div>`;
+  else if(S.id)h+=`<div class="editing">${ic('edit',15)}<span>Editando el registro <b>${esc(S.folio)}</b>. Los cambios se guardan al pulsar <b>Guardar cambios</b>.</span></div>`;
   if(st.special==='tipo')h+=`<div class="tipos">${T.map((k,j)=>{const t=TIPOS[k];return `<button type="button" class="tcard" style="--tone:${t.c}" data-tipo="${k}" aria-pressed="${S.tipo===k}"><span class="ico">${ic(t.ic)}</span><b>${esc(t.l)}</b><span>${esc(t.d)}</span>${S.tipo===k?`<span class="chk">${ic('check')}</span>`:`<kbd>${j+1}</kbd>`}</button>`}).join('')}</div>`;
   else if(st.special==='part')h+=htmlParticipantes();
   else{
@@ -647,7 +692,8 @@ function renderFoot(){
   $('#nextBtn').innerHTML=ult?`${ic('check')}${S.id?'Guardar cambios':'Guardar registro'}`:`Siguiente${ic('chev').replace('<path d="m6 9 6 6 6-6"/>','<path d="m9 18 6-6-6-6"/>')}`;
   $('#nextBtn').className='btn '+(ult?'ok':'pri');
   $('#nextBtn').disabled=!S.tipo;
-  $('#draftBtn').disabled=!S.tipo;
+  $('#draftBtn').disabled=!S.tipo||S.editable===false;
+  if(ult&&S.editable===false)$('#nextBtn').disabled=true;
   const a=avance();
   $('#progBar').style.width=Math.round(a*100)+'%';
   $('#progTx').textContent=S.tipo?`${Math.round(a*100)} % completo`:'Elige el tipo de incidencia';
@@ -715,7 +761,8 @@ function htmlRevision(){
     <div class="alerts">${e.map(x=>`<div class="al e">${ic('alert',15)}<span><b>${esc(pick(x.st.t,S.tipo))}:</b> ${esc(pick((x.st.fields||[]).find(f=>f.k===x.k)?.l,S.tipo)||x.k)} — ${esc(x.m)}</span><button type="button" class="btn sm" data-go="${pasos().indexOf(x.st)}">Corregir</button></div>`).join('')}
     ${w.map(x=>`<div class="al w">${ic('alert',15)}<span><b>${esc(pick(x.st.t,S.tipo))}:</b> ${esc(x.m)}</span><button type="button" class="btn sm ghost" data-go="${pasos().indexOf(x.st)}">Ir</button></div>`).join('')}
     ${!e.length?`<div class="al k">${ic('check',15)}<span>Todos los campos obligatorios están completos${w.length?'; los avisos en amarillo no impiden guardar':''}.</span></div>`:''}</div>
-    <div class="rev">${secs}</div>`;
+    <div class="rev">${secs}</div>
+    <p class="capt">${ic('user',14)} ${S.id?`Capturó: <b>${esc(S.capturistaReg||'—')}</b>`:`Se registrará como capturado por <b>${esc(YO?.nombre||'')}</b>`}</p>`;
 }
 
 /* ---------- Mapa */
@@ -869,7 +916,6 @@ function elegirTipo(k){
   S.tipo=k;
   if(nuevo&&!S.id){
     S.c.fecha??=hoy();S.c.hora??=ahora();
-    const cap=store.get('captura.capturista');if(cap&&!S.c.capturista)S.c.capturista=cap;
     const op=store.get('captura.operador');if(op&&!S.c.operador_en_turno)S.c.operador_en_turno=op;
   }
   if(k==='accidente'&&!S.p.length)S.p=[nuevoP()];
@@ -919,7 +965,6 @@ async function guardar(borrador){
     const r=await fetch(S.id?`${API}?id=${S.id}`:API,{method:S.id?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const j=await r.json().catch(()=>({error:`Error ${r.status}`}));
     if(!r.ok)throw new Error(j.error||`Error ${r.status}`);
-    if(S.c.capturista)store.set('captura.capturista',S.c.capturista);
     if(S.c.operador_en_turno)store.set('captura.operador',S.c.operador_en_turno);
     store.del('captura.borrador');
     if(body.colonia&&!CAT.colonia_info[body.colonia]){CAT.colonia.push(body.colonia);CAT.colonia_info[body.colonia]=[body.sector,body.latitud,body.longitud];$('#dl_colonia')?.remove()}
@@ -938,6 +983,7 @@ function exito(folio,editado,borrador){
 $('#modal').addEventListener('click',e=>{
   const b=e.target.closest('[data-m]');if(!b&&e.target.id!=='modal')return;
   const m=b?.dataset.m||'seguir';$('#modal').hidden=true;
+  if(m==='cerrar')return;
   if(m==='otra'){const keep={tipo:S.tipo,fecha:S.c.fecha,operador_en_turno:S.c.operador_en_turno,capturista:S.c.capturista,grupo:S.c.grupo};S=nuevoEstado();S.c={fecha:keep.fecha,hora:ahora(),operador_en_turno:keep.operador_en_turno,capturista:keep.capturista};elegirTipo(keep.tipo)}
   else if(m==='nueva'){S=nuevoEstado();renderStage()}
   else if(m==='regs')vista('registros');
@@ -1038,8 +1084,8 @@ function ofrecerBorrador(){
 let REGS=[],rTipo='';
 function vista(v){
   $$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.view===v));
-  $('#vNueva').hidden=v!=='nueva';$('#foot').hidden=v!=='nueva';$('#vRegs').hidden=v!=='registros';
-  if(v==='registros')cargarRegs();else renderStage();
+  $('#vNueva').hidden=v!=='nueva';$('#foot').hidden=v!=='nueva';$('#vRegs').hidden=v!=='registros';$('#vUsuarios').hidden=v!=='usuarios';
+  if(v==='registros')cargarRegs();else if(v==='usuarios')cargarUsuarios();else renderStage();
   window.scrollTo({top:0});
 }
 $$('[data-view]').forEach(b=>b.addEventListener('click',()=>vista(b.dataset.view)));
@@ -1052,7 +1098,7 @@ async function cargarRegs(){
     const q=new URLSearchParams({limit:1000});const qq=$('#rq').value.trim();if(qq)q.set('q',qq);
     const r=await fetch(`${API}?${q}`);const j=await r.json();if(!r.ok)throw new Error(j.error||r.status);
     REGS=j;
-  }catch(e){box.innerHTML=`<div class="nodata">${ic('alert',20)}<p>No se pudo consultar la base de datos.<br><small>${esc(e.message)}</small><br><small>Inicia el servidor local con <code>npm run dev</code>.</small></p></div>`;return}
+  }catch(e){box.innerHTML=`<div class="nodata">${ic('alert',20)}<p>No se pudo consultar la base de datos.<br><small>${esc(e.message)}</small><br><small>Revisa tu conexión e intenta de nuevo.</small></p></div>`;return}
   const cuenta={};REGS.forEach(x=>cuenta[x.tipo]=(cuenta[x.tipo]||0)+1);
   $('#rtipos').innerHTML=[['','Todos',REGS.length],...T.map(k=>[k,TIPOS[k].l,cuenta[k]||0])].map(([k,l,n])=>`<button class="chip" data-rt="${k}" aria-pressed="${rTipo===k}">${esc(l)} <span class="num">${n}</span></button>`).join('');
   const rows=REGS.filter(x=>!rTipo||x.tipo===rTipo);
@@ -1071,6 +1117,7 @@ async function abrir(id){
     for(const [k] of CONTEOS)n.c[k]=x[k];
     n.p=(x.participantes||[]).map(p=>{const q={};PF.forEach(f=>{if(p[f.k]!=null)q[f.k]=String(p[f.k])});return q});
     n.manual=true;n.p.forEach((_,j)=>n.abiertos[j]=false);
+    n.editable=x.editable!==false;n.capturistaReg=x.capturista||x.creado_por;
     S=n;S.visto=Object.fromEntries(pasos().map(s=>[s.id,1]));S.paso=pasos().length-1;
     vista('nueva');
   }catch(e){aviso('No se pudo abrir: '+e.message,1)}
@@ -1081,6 +1128,80 @@ $('#csvBtn').onclick=()=>{
   const csv=[cols.join(','),...REGS.filter(x=>!rTipo||x.tipo===rTipo).map(x=>cols.map(c=>`"${String(x[c]??'').replace(/"/g,'""')}"`).join(','))].join('\r\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['﻿'+csv],{type:'text/csv'}));a.download=`incidencias_${hoy()}.csv`;a.click();URL.revokeObjectURL(a.href);
 };
+
+/* ---------- Sesión: usuario y contraseña de cada capturista (api/auth.js, lib/sesion.js) */
+let YO=null;
+const irLogin=()=>location.replace('login.html?next='+encodeURIComponent(location.pathname));
+// si una llamada a la API responde 401 (sesión vencida), al inicio de sesión
+{const _f=window.fetch.bind(window);window.fetch=async(...a)=>{const r=await _f(...a);const u=String(a[0]?.url||a[0]);if(r.status===401&&u.includes('/api/')&&!u.includes('/api/auth'))irLogin();return r}}
+const iniciales=n=>String(n||'').split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join('');
+function pintarYo(){
+  $('#cuenta').hidden=!YO;if(!YO)return;
+  $('#yoNombre').textContent=YO.nombre;$('#yoNombre2').textContent=YO.nombre;$('#yoIni').textContent=iniciales(YO.nombre);
+  $('#yoRol').textContent=(YO.rol==='admin'?'Administrador':'Capturista')+' · '+YO.usuario;
+  $('#tabUsuarios').hidden=YO.rol!=='admin';
+}
+$('#cuentaBtn').onclick=e=>{e.stopPropagation();const m=$('#cuentaMenu');m.hidden=!m.hidden;$('#cuentaBtn').setAttribute('aria-expanded',!m.hidden)};
+document.addEventListener('click',e=>{if(!e.target.closest('#cuenta'))$('#cuentaMenu').hidden=true});
+$('#salirBtn').onclick=async()=>{try{await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:'salir'})})}catch(e){}store.del('captura.borrador');location.replace('login.html')};
+$('#cambiarBtn').onclick=()=>{
+  $('#cuentaMenu').hidden=true;
+  $('#modal').innerHTML=`<div class="mbox card" role="dialog" aria-modal="true" aria-labelledby="cpT"><h2 id="cpT">Cambiar contraseña</h2><form class="mform" id="cpForm">
+    <label for="cpA">Contraseña actual</label><input class="in" type="password" id="cpA" autocomplete="current-password">
+    <label for="cpN">Nueva contraseña</label><input class="in" type="password" id="cpN" autocomplete="new-password"><small class="help">Mínimo 8 caracteres, con letras y números.</small>
+    <label for="cpC">Confirma la nueva</label><input class="in" type="password" id="cpC" autocomplete="new-password">
+    <div class="merr" id="cpE"></div><button class="btn pri">Guardar</button><button type="button" class="btn ghost" data-m="cerrar">Cancelar</button></form></div>`;
+  $('#modal').hidden=false;$('#cpA').focus();
+  $('#cpForm').onsubmit=async e=>{e.preventDefault();const E=$('#cpE');E.textContent='';
+    if($('#cpN').value!==$('#cpC').value){E.textContent='Las dos contraseñas no coinciden';return}
+    const r=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:'cambiar',actual:$('#cpA').value,nueva:$('#cpN').value})});
+    const j=await r.json().catch(()=>({}));if(!r.ok){E.textContent=j.error||'No se pudo cambiar';return}
+    $('#modal').hidden=true;aviso('Contraseña actualizada')};
+};
+
+/* ---------- Usuarios (solo administradores; api/usuarios.js, tabla vialidad.usuarios) */
+let USUARIOS=[];
+async function cargarUsuarios(){
+  const box=$('#utable');
+  try{const r=await fetch('/api/usuarios');const j=await r.json();if(!r.ok)throw new Error(j.error);USUARIOS=j}
+  catch(e){box.innerHTML=`<div class="nodata">${ic('alert',20)}<p>${esc(e.message)}</p></div>`;return}
+  if(!USUARIOS.length){box.innerHTML='<div class="nodata">Aún no hay usuarios.</div>';return}
+  const est=u=>!u.activo?'<span class="est cancelado">inactivo</span>':u.bloqueado?'<span class="est borrador">bloqueado</span>':u.debe_cambiar?'<span class="est borrador">contraseña temporal</span>':'<span class="est validado">activo</span>';
+  box.innerHTML=`<table class="utab"><thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th>Último acceso</th><th>Dado de alta</th><th></th></tr></thead><tbody>${USUARIOS.map(u=>{const yo=u.usuario===YO?.usuario;return `<tr><td><b>${esc(u.usuario)}</b>${yo?' <small>(tú)</small>':''}</td><td>${esc(u.nombre)}</td>
+    <td><select data-rol="${u.id}" ${yo?'disabled':''} aria-label="Rol de ${esc(u.usuario)}"><option value="capturista" ${u.rol==='capturista'?'selected':''}>Capturista</option><option value="admin" ${u.rol==='admin'?'selected':''}>Administrador</option></select></td>
+    <td>${est(u)}</td><td class="num" style="white-space:nowrap">${u.ultimo_acceso?new Date(u.ultimo_acceso).toLocaleString('es-MX',{dateStyle:'short',timeStyle:'short'}):'—'}</td>
+    <td class="num" style="white-space:nowrap">${new Date(u.creado_en).toLocaleDateString('es-MX')}${u.creado_por?`<br><small>${esc(u.creado_por)}</small>`:''}</td>
+    <td style="white-space:nowrap"><button class="btn sm" data-reset="${u.id}">Restablecer contraseña</button> ${yo?'':`<button class="btn sm ${u.activo?'danger':''}" data-act-u="${u.id}">${u.activo?'Desactivar':'Activar'}</button>`}</td></tr>`}).join('')}</tbody></table>`;
+}
+async function cambiarUsuario(id,datos){
+  const r=await fetch(`/api/usuarios?id=${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(datos)});
+  const j=await r.json().catch(()=>({}));if(!r.ok){aviso(j.error||'No se pudo actualizar',1);cargarUsuarios();return null}
+  cargarUsuarios();return j;
+}
+function mostrarTemporal(u,tmp,nuevo){
+  $('#modal').innerHTML=`<div class="mbox card" role="dialog" aria-modal="true" aria-labelledby="tmT"><div class="okc">${ic('check')}</div><h2 id="tmT">${nuevo?'Usuario dado de alta':'Contraseña restablecida'}</h2>
+    <p>Contraseña temporal de <b>${esc(u.nombre)}</b> (usuario <b>${esc(u.usuario)}</b>):</p>
+    <div class="tmp"><code>${esc(tmp)}</code><button class="btn sm" id="tmpCopy">${ic('copy',14)}Copiar</button></div>
+    <p>Compártela solo con esa persona. Al entrar por primera vez se le pedirá cambiarla. No se vuelve a mostrar.</p>
+    <div class="acts"><button class="btn pri" data-m="cerrar">Listo</button></div></div>`;
+  $('#modal').hidden=false;
+  $('#tmpCopy').onclick=()=>{navigator.clipboard?.writeText(tmp).then(()=>aviso('Contraseña copiada'),()=>aviso('Selecciona y copia la contraseña',1))};
+}
+$('#uForm').onsubmit=async e=>{
+  e.preventDefault();
+  const b={usuario:$('#uUsuario').value.trim().toLowerCase(),nombre:$('#uNombre').value.trim(),rol:$('#uRol').value};
+  $('#uAgregar').disabled=true;
+  try{const r=await fetch('/api/usuarios',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});const j=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(j.error||'No se pudo dar de alta');
+    $('#uForm').reset();cargarUsuarios();mostrarTemporal(j,j.temporal,true)}
+  catch(x){aviso(x.message,1)}finally{$('#uAgregar').disabled=false}
+};
+$('#utable').addEventListener('change',e=>{const s=e.target.closest('[data-rol]');if(s)cambiarUsuario(s.dataset.rol,{rol:s.value})});
+$('#utable').addEventListener('click',async e=>{
+  const r=e.target.closest('[data-reset]'),a=e.target.closest('[data-act-u]');
+  if(r){const u=USUARIOS.find(x=>String(x.id)===r.dataset.reset);if(!confirm(`¿Generar una nueva contraseña temporal para ${u.nombre}? La actual dejará de funcionar.`))return;const j=await cambiarUsuario(u.id,{restablecer:true});if(j)mostrarTemporal(j,j.temporal,false)}
+  if(a){const u=USUARIOS.find(x=>String(x.id)===a.dataset.actU);if(u.activo&&!confirm(`¿Desactivar a ${u.nombre}? Ya no podrá iniciar sesión.`))return;cambiarUsuario(u.id,{activo:!u.activo})}
+});
 
 /* ---------- Tema */
 function pintarTema(){$('#themeBtn').innerHTML=ic(oscuro()?'sun':'moon',17);$('#themeBtn').title=oscuro()?'Tema claro':'Tema oscuro'}
@@ -1095,6 +1216,8 @@ document.addEventListener('focusout',()=>setTimeout(()=>{const a=document.active
 
 (async()=>{
   pintarTema();
+  try{const r=await fetch('/api/auth');if(!r.ok)return irLogin();YO=await r.json();if(YO.cambiar)return irLogin()}catch(e){aviso('Sin conexión con el servidor',1)}
+  pintarYo();
   try{CAT=await (await fetch('catalogos.json')).json()}catch(e){aviso('No se pudieron cargar los catálogos',1)}
   CAT.colonia_info=CAT.colonia_info||{};CAT.colonia=CAT.colonia||[];
   try{const r=await fetch('/api/colonias');if(r.ok){const j=await r.json();for(const c of j.colonias||[])if(!CAT.colonia_info[c.nombre]){CAT.colonia.push(c.nombre);CAT.colonia_info[c.nombre]=[c.sector,c.latitud,c.longitud]}indicePuntos(j.puntos||[])}}catch(e){}

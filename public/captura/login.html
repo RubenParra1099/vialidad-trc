@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Iniciar sesión · Captura Argos Vialidad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  --bg:#0a101d; --panel:#121a2b; --panel2:#172137; --line:#222d44; --line2:#323f5b;
+  --fg:#f3f5f9; --muted:#9aa3b4; --faint:#6b7589; --accent:#2bbfc1; --rose:#ee3f7c; --ok:#10b981;
+  --onaccent:#04161a; --logobody:#d3d9e4; --shadow:0 10px 30px -12px rgba(0,0,0,.6);
+  --font:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){
+  --bg:#f5f7f9; --panel:#ffffff; --panel2:#f4f7f9; --line:#e3e8ee; --line2:#cdd5df;
+  --fg:#141a2a; --muted:#5a6375; --faint:#6f7889; --accent:#007a82; --rose:#d81b60; --ok:#047857;
+  --onaccent:#ffffff; --logobody:#2b3245; --shadow:0 10px 30px -18px rgba(15,23,42,.35); color-scheme:light;
+}}
+:root[data-theme="light"]{
+  --bg:#f5f7f9; --panel:#ffffff; --panel2:#f4f7f9; --line:#e3e8ee; --line2:#cdd5df;
+  --fg:#141a2a; --muted:#5a6375; --faint:#6f7889; --accent:#007a82; --rose:#d81b60; --ok:#047857;
+  --onaccent:#ffffff; --logobody:#2b3245; --shadow:0 10px 30px -18px rgba(15,23,42,.35); color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:24px 16px;background:var(--bg);color:var(--fg);font:15px/1.45 var(--font);
+  background-image:radial-gradient(700px 500px at 0% 0%,color-mix(in oklab,var(--accent) 10%,transparent),transparent 70%),radial-gradient(600px 460px at 100% 100%,color-mix(in oklab,var(--rose) 7%,transparent),transparent 70%)}
+.box{width:min(400px,100%);background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:30px 26px 26px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;margin-bottom:22px}
+.brand .logo{width:40px;height:auto}
+.brand b{color:var(--accent)}
+.brand small{display:block;font-size:12px;font-weight:600;color:var(--muted)}
+.lg-a{fill:#00A5A5}.lg-b{fill:#D81B60}.lg-c{fill:#0E71AF}.lg-d{fill:var(--logobody)}
+h1{margin:0 0 4px;font-size:22px;letter-spacing:-.02em}
+p.sub{margin:0 0 20px;color:var(--muted);font-size:14px}
+label{display:block;font-weight:650;font-size:13.5px;margin:14px 0 6px}
+.in{width:100%;height:46px;border-radius:11px;border:1px solid var(--line2);background:var(--panel2);color:inherit;padding:0 13px;font:16px var(--font);outline:none}
+.in:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in oklab,var(--accent) 22%,transparent);background:var(--panel)}
+.pw{position:relative}
+.pw .in{padding-right:46px}
+.pw button{position:absolute;right:4px;top:4px;width:38px;height:38px;border:0;background:transparent;color:var(--muted);border-radius:8px;cursor:pointer;display:grid;place-items:center}
+.pw button:hover{color:var(--fg)}
+.btn{width:100%;height:46px;margin-top:22px;border-radius:11px;border:1px solid var(--accent);background:var(--accent);color:var(--onaccent);font:700 15px var(--font);cursor:pointer}
+.btn:disabled{opacity:.6;cursor:default}
+.err{margin-top:14px;padding:10px 12px;border-radius:10px;background:color-mix(in oklab,var(--rose) 13%,transparent);color:var(--fg);font-size:13.5px}
+.ok{margin-top:14px;padding:10px 12px;border-radius:10px;background:color-mix(in oklab,var(--ok) 13%,transparent);font-size:13.5px}
+.help{margin-top:6px;font-size:12.5px;color:var(--faint)}
+.foot{margin-top:18px;font-size:12.5px;color:var(--faint);text-align:center}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+</style>
+</head>
+<body>
+<main class="box">
+  <div class="brand"><svg class="logo" viewBox="0 0 1247 864" role="img" aria-label="Argos"><g transform="translate(0,864) scale(0.1,-0.1)"><path class="lg-a" d="M4465 7116 c-156 -38 -278 -161 -314 -317 -7 -28 -11 -424 -11 -1099 0 -1143 -2 -1108 54 -1218 28 -56 115 -141 177 -172 93 -48 113 -50 644 -50 l500 0 251 253 c496 500 619 639 732 830 101 172 138 289 149 469 7 120 -4 211 -44 358 -45 169 -162 455 -315 773 l-91 187 -841 -1 c-624 0 -854 -4 -891 -13z"/><path class="lg-b" d="M6330 7127 c0 -2 34 -76 76 -163 175 -366 305 -705 340 -889 22 -119 22 -323 -1 -430 -22 -106 -84 -264 -138 -351 -122 -197 -254 -350 -614 -715 -167 -168 -303 -309 -303 -313 0 -4 177 -6 393 -3 350 4 403 7 491 26 421 89 786 335 1017 685 114 173 188 354 231 568 22 110 23 128 23 683 0 536 -1 573 -19 620 -45 119 -134 212 -248 258 -52 22 -63 22 -650 25 -329 2 -598 1 -598 -1z"/><path class="lg-c" d="M9006 6175 c-64 -23 -86 -45 -176 -177 -313 -462 -497 -1110 -459 -1614 35 -471 217 -851 540 -1130 105 -91 242 -198 535 -419 228 -172 440 -374 518 -493 163 -247 239 -495 239 -777 0 -162 -17 -272 -68 -431 -35 -108 -116 -269 -181 -360 -30 -41 -54 -77 -54 -79 0 -3 33 7 73 21 254 90 457 238 695 506 157 178 237 290 307 433 107 216 156 431 156 685 1 283 -58 519 -188 752 -123 222 -287 404 -597 662 -152 127 -349 307 -428 391 -211 225 -312 456 -325 741 -8 190 13 316 83 496 31 79 35 102 32 153 -7 120 -104 261 -335 486 -123 121 -145 139 -193 153 -65 19 -122 20 -174 1z"/><path class="lg-d" d="M2790 5623 c-108 -6 -317 -35 -435 -60 -996 -208 -1769 -940 -2009 -1899 -256 -1026 107 -2064 945 -2698 377 -285 841 -464 1309 -506 164 -14 6291 -14 6396 1 620 86 1049 668 949 1288 -40 242 -170 483 -352 652 -33 30 -212 171 -398 313 -187 143 -414 317 -505 386 -91 70 -257 197 -370 283 -113 86 -311 237 -440 336 -129 98 -237 177 -239 175 -2 -2 7 -21 21 -42 147 -222 163 -499 44 -773 -5 -12 3 -23 30 -40 72 -44 155 -120 208 -192 283 -379 222 -890 -142 -1179 -153 -121 -320 -179 -517 -179 -337 0 -621 182 -770 492 -85 178 -99 411 -36 599 18 52 43 115 57 139 13 24 23 46 21 47 -2 2 -797 4 -1768 5 -970 1 -1818 5 -1884 9 -500 34 -868 396 -926 912 -21 188 14 383 100 564 61 126 94 176 185 272 142 150 317 256 512 308 90 24 120 27 332 31 l232 6 -2 376 -3 376 -245 1 c-135 0 -270 -1 -300 -3z"/><path class="lg-b" d="M7210 2769 c-184 -24 -340 -181 -371 -375 -47 -290 219 -554 508 -506 297 49 463 357 338 629 -83 182 -265 279 -475 252z"/></g></svg><span>Argos<b>·Vialidad</b><small>Captura de incidencias</small></span></div>
+
+  <form id="fEntrar" autocomplete="on" novalidate>
+    <h1>Iniciar sesión</h1>
+    <p class="sub">Entra con el usuario que te dio el administrador.</p>
+    <label for="usuario">Usuario</label>
+    <input class="in" id="usuario" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+    <label for="contrasena">Contraseña</label>
+    <div class="pw"><input class="in" id="contrasena" name="password" type="password" autocomplete="current-password" required><button type="button" data-ver="contrasena" aria-label="Mostrar contraseña"></button></div>
+    <div class="err" id="eEntrar" role="alert" hidden></div>
+    <button class="btn" id="bEntrar">Entrar</button>
+  </form>
+
+  <form id="fCambiar" hidden novalidate>
+    <h1>Cambia tu contraseña</h1>
+    <p class="sub" id="hola">Es tu primer acceso o te dieron una contraseña temporal. Elige una nueva que solo tú conozcas.</p>
+    <label for="nueva">Nueva contraseña</label>
+    <div class="pw"><input class="in" id="nueva" type="password" autocomplete="new-password" required><button type="button" data-ver="nueva" aria-label="Mostrar contraseña"></button></div>
+    <div class="help">Mínimo 8 caracteres, con letras y números.</div>
+    <label for="confirma">Confirma la nueva contraseña</label>
+    <div class="pw"><input class="in" id="confirma" type="password" autocomplete="new-password" required><button type="button" data-ver="confirma" aria-label="Mostrar contraseña"></button></div>
+    <div class="err" id="eCambiar" role="alert" hidden></div>
+    <button class="btn" id="bCambiar">Guardar y entrar</button>
+  </form>
+
+  <div class="foot">¿Olvidaste tu contraseña? Pide al administrador que la restablezca.</div>
+</main>
+<script>
+'use strict';
+const $=s=>document.querySelector(s);
+const OJO='<svg class="i" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const OJO_NO='<svg class="i" viewBox="0 0 24 24"><path d="M17.9 17.9A10 10 0 0 1 12 19c-6.5 0-10-7-10-7a18 18 0 0 1 5.1-5.9M9.9 4.2A9 9 0 0 1 12 4c6.5 0 10 7 10 7a18 18 0 0 1-2.2 3.2M1 1l22 22"/><path d="M14.1 14.1a3 3 0 1 1-4.2-4.2"/></svg>';
+try{const t=localStorage.getItem('captura.tema');if(t)document.documentElement.dataset.theme=JSON.parse(t)}catch(e){}
+document.querySelectorAll('[data-ver]').forEach(b=>{b.innerHTML=OJO;b.onclick=()=>{const i=document.getElementById(b.dataset.ver);const v=i.type==='password';i.type=v?'text':'password';b.innerHTML=v?OJO_NO:OJO;b.setAttribute('aria-label',v?'Ocultar contraseña':'Mostrar contraseña')}});
+const destino=()=>{const n=new URLSearchParams(location.search).get('next')||'/captura/';return /^\/captura(\/|$)/.test(n)?n:'/captura/'};
+const err=(id,m)=>{const e=$(id);e.textContent=m;e.hidden=!m};
+let actual='';
+async function api(body){
+  const r=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),credentials:'same-origin'});
+  const j=await r.json().catch(()=>({error:'Error '+r.status}));
+  if(!r.ok)throw new Error(j.error||'Error '+r.status);
+  return j;
+}
+function pedirCambio(nombre){
+  $('#fEntrar').hidden=true;$('#fCambiar').hidden=false;
+  if(nombre)$('#hola').textContent=`Hola, ${nombre}. Es tu primer acceso o te dieron una contraseña temporal: elige una nueva que solo tú conozcas.`;
+  $('#nueva').focus();
+}
+$('#fEntrar').onsubmit=async e=>{
+  e.preventDefault();err('#eEntrar','');
+  const usuario=$('#usuario').value.trim(),contrasena=$('#contrasena').value;
+  if(!usuario||!contrasena)return err('#eEntrar','Escribe tu usuario y tu contraseña.');
+  $('#bEntrar').disabled=true;$('#bEntrar').textContent='Entrando…';
+  try{
+    const j=await api({accion:'entrar',usuario,contrasena});
+    if(j.cambiar){actual=contrasena;pedirCambio(j.nombre)}else location.replace(destino());
+  }catch(x){err('#eEntrar',x.message);$('#contrasena').select()}
+  finally{$('#bEntrar').disabled=false;$('#bEntrar').textContent='Entrar'}
+};
+$('#fCambiar').onsubmit=async e=>{
+  e.preventDefault();err('#eCambiar','');
+  const nueva=$('#nueva').value,conf=$('#confirma').value;
+  if(nueva!==conf)return err('#eCambiar','Las dos contraseñas no coinciden.');
+  $('#bCambiar').disabled=true;
+  try{await api({accion:'cambiar',actual,nueva});location.replace(destino())}
+  catch(x){err('#eCambiar',x.message)}
+  finally{$('#bCambiar').disabled=false}
+};
+// ya con sesión: directo a la captura (o al cambio de contraseña pendiente)
+fetch('/api/auth',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).then(j=>{if(!j)return $('#usuario').focus();if(j.cambiar){$('#fEntrar').hidden=false;$('#usuario').value=j.usuario;$('#contrasena').focus();err('#eEntrar','Vuelve a escribir tu contraseña temporal para cambiarla.')}else location.replace(destino())}).catch(()=>$('#usuario').focus());
+</script>
+</body>
+</html>

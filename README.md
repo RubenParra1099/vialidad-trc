@@ -109,3 +109,21 @@ Al marcar un punto en el mapa, `api/geo.js` obtiene la calle y el número (Nomin
 **Colonias.** `vialidad.colonias` es el catálogo vivo: las 302 colonias históricas (variantes de escritura unificadas, `npm run captura:catalogos`) más las que se agregan solas al guardar un registro con una colonia que no estaba (`fuente = 'captura'`). En el mapa, la colonia se toma de OpenStreetMap si coincide con el catálogo; si no, por votación de los registros cercanos (históricos y capturados). Se llena sola con confianza ≥ 60 % (≈ 81 % de acierto); si no, se ofrecen las opciones más probables.
 
 **Catálogo oficial de colonias.** `node scripts/importar-colonias-oficiales.mjs "Colonias Torreon.xlsx" "codigos_postales_torreon.txt"` convierte las fuentes oficiales (Excel de colonias por sección electoral, pestaña TORREON, y la lista de códigos postales) a `scripts/datos/colonias_oficiales.json`. `npm run captura:catalogos` une esas colonias con las escritas en el histórico (`scripts/colonias-unificar.mjs`): cada escritura histórica queda como alias de su colonia oficial, y las que no tienen equivalente seguro se listan en `scripts/datos/colonias_revision.csv`. Las decisiones manuales se anotan en `scripts/datos/colonias_equivalencias.json` y se aplican al volver a correr `npm run captura:catalogos`.
+
+## Usuarios de la captura
+
+La captura (`/captura/`) pide **usuario y contraseña propios** de cada capturista; el panel de indicadores sigue con la contraseña general (`BASIC_AUTH_*`).
+
+- Los usuarios viven en Neon, tabla **`vialidad.usuarios`** (la contraseña se guarda cifrada con scrypt: no se puede escribir a mano en Neon Console).
+- **Dar de alta, activar, desactivar o restablecer contraseñas:** entra a `/captura/` con un usuario administrador → pestaña **Usuarios**. Al dar de alta se muestra una contraseña temporal; la persona la cambia en su primer acceso.
+- Roles: **capturista** (captura y consulta; solo edita lo que capturó) y **admin** (además administra usuarios y edita cualquier registro).
+- Cada incidencia guarda quién la capturó (`capturista`, `creado_por`) y quién la modificó (`actualizado_por`).
+- Tras 5 contraseñas incorrectas el usuario se bloquea 15 minutos (o hasta que un admin le restablezca la contraseña).
+- Desde la terminal (primer administrador o emergencias):
+  ```bash
+  npm run usuarios -- listar
+  npm run usuarios -- crear jperez "Juan Pérez" capturista     # o admin
+  npm run usuarios -- restablecer jperez
+  npm run usuarios -- desactivar jperez
+  ```
+- Variables necesarias en Vercel: `DATABASE_URL`, `SESSION_SECRET` (llave para firmar la sesión, 32+ caracteres), `BASIC_AUTH_USER`, `BASIC_AUTH_PASSWORD`. En local, `SESSION_SECRET` va en `.env`.

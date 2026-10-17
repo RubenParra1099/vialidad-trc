@@ -1,10 +1,18 @@
-// Protege todo el sitio con usuario y contraseña (autenticación básica HTTP).
-// Configura BASIC_AUTH_USER y BASIC_AUTH_PASSWORD en Vercel → Settings → Environment Variables.
+// Protección del sitio:
+//  · Módulo de captura (/captura y sus APIs): usuario y contraseña propios de cada capturista (vialidad.usuarios),
+//    con sesión en cookie firmada (lib/sesion.js). La página de inicio de sesión y /api/auth son públicas.
+//  · Todo lo demás (panel de indicadores): autenticación básica HTTP con BASIC_AUTH_USER / BASIC_AUTH_PASSWORD.
+// Variables en Vercel → Settings → Environment Variables: BASIC_AUTH_USER, BASIC_AUTH_PASSWORD, SESSION_SECRET, DATABASE_URL.
 import { next } from '@vercel/functions';
+import { reglaCaptura } from './lib/acceso.js';
 
 export const config = { matcher: '/:path*' };
 
-export default function middleware(request) {
+export default async function middleware(request) {
+  const regla = await reglaCaptura(request);
+  if (regla === 'libre') return next({ headers: { 'Cache-Control': 'private, no-store' } });
+  if (regla instanceof Response) return regla;
+
   const user = process.env.BASIC_AUTH_USER;
   const pass = process.env.BASIC_AUTH_PASSWORD;
   if (!user || !pass) {

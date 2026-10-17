@@ -4,7 +4,9 @@
 //   POST /api/incidencias                   crea  { ...campos, participantes: [...] } -> { id, folio }
 //   PUT  /api/incidencias?id=N              actualiza (reemplaza participantes)
 // Si la colonia no está en vialidad.colonias, se agrega al guardar.
+// Requiere sesión. Capturó / creado_por / actualizado_por los pone el servidor; un capturista solo edita sus registros.
 import pg from 'pg';
+import { exigirSesion } from '../lib/sesion.js';
 import { TABLA, TABLA_PART, TIPOS, ESTADOS, COLUMNAS, COLUMNAS_PART, convertir, agregarColonia } from '../lib/incidencias.js';
 
 let pool;
@@ -44,6 +46,8 @@ async function enTransaccion(fn) {
 const SELECT = `SELECT *, to_char(fecha, 'YYYY-MM-DD') AS fecha, to_char(hora, 'HH24:MI') AS hora, to_char(hora_remision, 'HH24:MI') AS hora_remision FROM ${TABLA}`;
 
 export async function GET(request) {
+  const { sesion, error } = await exigirSesion(request);
+  if (error) return error;
   try {
     const u = new URL(request.url);
     const id = u.searchParams.get('id');
@@ -51,7 +55,7 @@ export async function GET(request) {
       const { rows } = await db().query(`${SELECT} WHERE id = $1`, [id]);
       if (!rows.length) return json({ error: 'No existe el registro' }, 404);
       const part = await db().query(`SELECT * FROM ${TABLA_PART} WHERE incidencia_id = $1 ORDER BY num`, [id]);
-      return json({ ...rows[0], participantes: part.rows });
+      return json({ ...rows[0], participantes: part.rows, editable: sesion.r === 'admin' || rows[0].creado_por === sesion.u });
     }
     const where = [], params = [];
     const tipo = u.searchParams.get('tipo');
@@ -65,7 +69,7 @@ export async function GET(request) {
     }
     const limit = Math.min(Math.max(parseInt(u.searchParams.get('limit'), 10) || 200, 1), 1000);
     const { rows } = await db().query(`SELECT i.id, i.folio, i.tipo, i.estado, to_char(i.fecha, 'YYYY-MM-DD') AS fecha, to_char(i.hora, 'HH24:MI') AS hora,
-        i.ubicacion, i.colonia, i.sector, i.agentes, i.unidades, i.capturista, i.creado_en, i.actualizado_en,
+        i.ubicacion, i.colonia, i.sector, i.agentes, i.unidades, i.capturista, i.creado_por, i.creado_en, i.actualizado_en,
         coalesce(i.lesionado_masculino,0)+coalesce(i.lesionado_femenino,0) AS lesionados, coalesce(i.fallecido_masculino,0)+coalesce(i.fallecido_femenino,0) AS fallecidos,
         (SELECT count(*)::int FROM ${TABLA_PART} p WHERE p.incidencia_id = i.id) AS n_participantes
       FROM ${TABLA} i ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY i.creado_en DESC LIMIT ${limit}`, params);
@@ -74,9 +78,13 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+  const { sesion, error } = await exigirSesion(request);
+  if (error) return error;
   try {
     const body = await request.json();
     const fila = filaDe(body);
+    fila.capturista = sesion.n;
+    fila.creado_por = sesion.u;
     if (!fila.tipo) throw bad('Falta el tipo de incidencia');
     fila.estado ??= 'capturado';
     const part = participantesDe(body);
@@ -92,13 +100,20 @@ export async function POST(request) {
 }
 
 export async function PUT(request) {
+  const { sesion, error } = await exigirSesion(request);
+  if (error) return error;
   try {
     const id = new URL(request.url).searchParams.get('id');
     if (!id) throw bad('Falta id');
     const body = await request.json();
     const fila = filaDe(body);
+    delete fila.capturista;
+    fila.actualizado_por = sesion.u;
     const part = participantesDe(body);
     const r = await enTransaccion(async (cx) => {
+      const { rows: [actual] } = await cx.query(`SELECT creado_por FROM ${TABLA} WHERE id = $1 FOR UPDATE`, [id]);
+      if (!actual) throw Object.assign(new Error('No existe el registro'), { status: 404 });
+      if (sesion.r !== 'admin' && actual.creado_por !== sesion.u) throw Object.assign(new Error('Solo puedes editar los registros que tú capturaste'), { status: 403 });
       const cols = Object.keys(fila);
       const { rows } = await cx.query(`UPDATE ${TABLA} SET ${cols.map((c, i) => `${c} = $${i + 2}`).concat('actualizado_en = now()').join(', ')} WHERE id = $1 RETURNING id, folio`, [id, ...cols.map((c) => fila[c])]);
       if (!rows.length) throw Object.assign(new Error('No existe el registro'), { status: 404 });

@@ -9,7 +9,8 @@
     "db:revisar": "node scripts/migrar-postgres.mjs --revisar",
     "db:migrar": "node --env-file=.env scripts/migrar-postgres.mjs",
     "db:incidencias": "node --env-file=.env scripts/crear-tabla-incidencias.mjs",
-    "captura:catalogos": "node --env-file=.env scripts/generar-catalogos.mjs"
+    "captura:catalogos": "node --env-file=.env scripts/generar-catalogos.mjs",
+    "usuarios": "node --env-file=.env scripts/usuarios.mjs"
   },
   "dependencies": {
     "@vercel/functions": "^3.10.1",

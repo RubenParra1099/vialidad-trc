@@ -1,6 +1,7 @@
 // Crea (o actualiza) las tablas de captura de incidencias en Neon:
 //   vialidad.incidencias                 un registro por incidencia capturada
 //   vialidad.incidencias_participantes   personas y vehículos involucrados (accidentes)
+//   vialidad.usuarios                    usuarios de captura (alta y baja desde la pestaña Usuarios, rol admin)
 //   vialidad.colonias                    catálogo de colonias (se llena con npm run captura:catalogos y al capturar)
 //   vialidad.v_incidencias               vista para revisar en Neon Console con los involucrados resumidos
 //
@@ -8,7 +9,7 @@
 //
 // No borra datos: crea lo que falte y agrega las columnas nuevas definidas en lib/incidencias.js.
 import pg from 'pg';
-import { SCHEMA, TABLA, TABLA_PART, TIPOS, ESTADOS, COLUMNAS, COLUMNAS_PART, DDL_COLONIAS } from '../lib/incidencias.js';
+import { SCHEMA, TABLA, TABLA_PART, TIPOS, ESTADOS, COLUMNAS, COLUMNAS_PART, DDL_COLONIAS, DDL_USUARIOS, TABLA_USUARIOS } from '../lib/incidencias.js';
 
 if (!process.env.DATABASE_URL) throw new Error('Falta DATABASE_URL en el .env');
 const lit = pg.escapeLiteral;
@@ -49,6 +50,14 @@ try {
   await db.query(`CREATE INDEX IF NOT EXISTS incidencias_part_inc_idx ON ${TABLA_PART} (incidencia_id)`);
 
   await db.query(DDL_COLONIAS);
+  // usuarios de captura y quién creó / modificó cada incidencia (lo pone el servidor con la sesión)
+  await db.query(DDL_USUARIOS);
+  await db.query(`COMMENT ON TABLE ${TABLA_USUARIOS} IS 'Usuarios del módulo de captura. Alta, baja y contraseñas desde la pestaña Usuarios (rol admin); la contraseña se guarda cifrada (scrypt)'`);
+  for (const [c, d] of [['usuario', 'Usuario para iniciar sesión (minúsculas, sin espacios)'], ['rol', 'capturista: captura y consulta · admin: además administra usuarios y edita cualquier registro'], ['contrasena', 'Contraseña cifrada (scrypt). No se puede escribir a mano'], ['activo', 'false = no puede iniciar sesión'], ['debe_cambiar', 'true = debe cambiar la contraseña temporal al entrar'], ['bloqueado_hasta', 'Bloqueo temporal tras 5 intentos fallidos']])
+    await db.query(`COMMENT ON COLUMN ${TABLA_USUARIOS}.${c} IS ${lit(d)}`);
+  await db.query(`ALTER TABLE ${TABLA} ADD COLUMN IF NOT EXISTS creado_por text, ADD COLUMN IF NOT EXISTS actualizado_por text`);
+  await db.query(`COMMENT ON COLUMN ${TABLA}.creado_por IS 'Usuario que capturó el registro (sesión)'`);
+  await db.query(`COMMENT ON COLUMN ${TABLA}.actualizado_por IS 'Último usuario que modificó el registro (sesión)'`);
   await db.query(`DROP VIEW IF EXISTS ${SCHEMA}.v_incidencias`);
   await db.query(`CREATE VIEW ${SCHEMA}.v_incidencias AS
     SELECT i.folio, i.tipo, i.estado, i.fecha, i.hora, i.ubicacion, i.colonia, i.sector,

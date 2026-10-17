@@ -1,9 +1,11 @@
-// Servidor local: sirve public/ y las funciones de api/ (como en Vercel).
+// Servidor local: sirve public/ y las funciones de api/ (como en Vercel), con el mismo control de acceso
+// del módulo de captura (lib/acceso.js). La autenticación básica del panel no se pide en local.
 //   npm run dev        ->  http://localhost:8000  (panel)  ·  http://localhost:8000/captura/  (captura)
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { reglaCaptura } from '../lib/acceso.js';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(RAIZ, 'public');
@@ -13,6 +15,12 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.
 http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   try {
+    const regla = await reglaCaptura(new Request(url, { headers: req.headers }));
+    if (regla instanceof Response) {
+      res.writeHead(regla.status, Object.fromEntries(regla.headers));
+      res.end(Buffer.from(await regla.arrayBuffer()));
+      return;
+    }
     if (url.pathname.startsWith('/api/')) {
       const archivo = path.join(RAIZ, 'api', path.basename(url.pathname) + '.js');
       if (!fs.existsSync(archivo)) { res.writeHead(404).end('No existe'); return; }

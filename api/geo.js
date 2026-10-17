@@ -4,6 +4,8 @@
 // La calle y el número vienen de Nominatim; las entre calles se calculan con las vías de OpenStreetMap
 // alrededor del punto: se toman las calles que cruzan la calle principal (comparten un nodo con ella)
 // y se eligen las intersecciones más cercanas a cada lado del punto.
+import { exigirSesion } from '../lib/sesion.js';
+
 const UA = 'argos-vialidad-trc/1.0 (captura de incidencias)';
 const VIAS = /^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street)(_link)?$/;
 const json = (data, status = 200) => Response.json(data, { status, headers: { 'Cache-Control': 'private, max-age=86400' } });
@@ -41,6 +43,8 @@ async function vias(lat, lng) {
 }
 
 export async function GET(request) {
+  const { error } = await exigirSesion(request);
+  if (error) return error;
   const u = new URL(request.url);
   const lat = parseFloat(u.searchParams.get('lat')), lng = parseFloat(u.searchParams.get('lng'));
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return json({ error: 'Parámetros lat y lng inválidos' }, 400);
