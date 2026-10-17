@@ -103,6 +103,8 @@ if (fs.existsSync(GEO_INE)) {
     if (c.n in coloniaIne) continue;
     let destino = resolver(c.n);
     if (!destino) { destino = c.n; nuevasIne.add(destino); nombresFinales.push(destino); ponAlias(destino, destino); }
+    // una colonia que no está en el Excel pero sí tiene polígono del INE cuenta como del INE
+    else if (!U.oficialPorNombre.has(destino)) nuevasIne.add(destino);
     coloniaIne[c.n] = destino;
   }
   // sector y centro de las nuevas: los registros históricos que caen en su polígono
