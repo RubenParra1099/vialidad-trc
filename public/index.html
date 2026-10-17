@@ -880,7 +880,7 @@ main{min-width:0;padding-block:22px 40px;padding-left:max(16px,env(safe-area-ins
 .minis{display:inline-flex;padding:3px;gap:2px;border-radius:10px;background:var(--panel2);border:1px solid var(--line)}
 .minis button{border:0;background:transparent;padding:3px 9px;border-radius:7px;font-size:11.5px;font-weight:700;color:var(--muted)}
 .minis button.on{background:var(--chipbg);color:var(--accent)}
-.ch{width:100%;min-height:260px}
+.ch{width:100%;min-height:260px;isolation:isolate}
 .modhd{grid-column:1/-1;display:flex;align-items:center;gap:12px;margin-top:14px;padding:0 4px 2px;border-bottom:1px solid var(--line)}
 .modhd .ico{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;color:var(--tone);background:color-mix(in srgb,var(--tone) 14%,transparent);flex:none}
 .modhd h2{margin:0;font-size:17px;font-weight:800}
@@ -973,7 +973,8 @@ button.lgi:hover{border-color:var(--accent)}
 .gwrap{display:grid;grid-template-columns:290px minmax(0,1fr);border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}
 .gwrap .lmap{border:0;border-radius:0}
 .vside{border-right:0;border-left:1px solid var(--line)}
-.gwrap{position:relative}
+/* isolation: los z-index internos (panel de vialidades, controles) no salen del mapa ni tapan la ficha, la barra superior o los menús */
+.gwrap{position:relative;isolation:isolate}
 .gwrap.one{grid-template-columns:minmax(0,1fr)}
 .vside.drawer{position:absolute;top:0;right:0;bottom:0;width:min(270px,88%);max-height:none;z-index:500;display:none;box-shadow:-10px 0 28px -14px rgba(0,0,0,.45)}
 .gwrap.vopen .vside.drawer{display:flex}
